@@ -11,6 +11,7 @@ if (!isset($_SESSION['user_id'])) {
 // Fetch stats
 $total_devices = $pdo->query("SELECT COUNT(*) FROM devices")->fetchColumn();
 $active_rentals = $pdo->query("SELECT COUNT(*) FROM devices WHERE rental_end_time > NOW()")->fetchColumn();
+$online_devices = $pdo->query("SELECT COUNT(*) FROM devices WHERE last_seen > DATE_SUB(NOW(), INTERVAL 5 MINUTE)")->fetchColumn();
 $locked_devices = $pdo->query("SELECT COUNT(*) FROM devices WHERE is_locked = 1")->fetchColumn();
 
 // Fetch devices
@@ -25,16 +26,7 @@ $devices = $pdo->query("SELECT * FROM devices ORDER BY last_seen DESC LIMIT 10")
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <aside class="sidebar">
-        <h1>Rental Admin</h1>
-        <nav>
-            <ul>
-                <li><a href="index.php" class="active">Dashboard</a></li>
-                <li><a href="devices.php">Devices</a></li>
-                <li><a href="logout.php">Logout</a></li>
-            </ul>
-        </nav>
-    </aside>
+    <?php include 'includes/sidebar.php'; ?>
 
     <div class="main-wrapper">
         <header>
@@ -59,6 +51,10 @@ $devices = $pdo->query("SELECT * FROM devices ORDER BY last_seen DESC LIMIT 10")
                 <div class="card">
                     <h3>Active Rentals</h3>
                     <p style="font-size: 2.5rem; font-weight: bold; color: var(--success);"><?php echo $active_rentals; ?></p>
+                </div>
+                <div class="card">
+                    <h3>Online Devices</h3>
+                    <p style="font-size: 2.5rem; font-weight: bold; color: var(--primary-color);"><?php echo $online_devices; ?></p>
                 </div>
                 <div class="card">
                     <h3>Locked Devices</h3>

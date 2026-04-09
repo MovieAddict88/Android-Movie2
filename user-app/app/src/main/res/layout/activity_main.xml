@@ -6,7 +6,7 @@
     android:orientation="vertical"
     android:gravity="center"
     android:padding="24dp"
-    android:background="#F1F5F9">
+    android:background="#F8FAFC">
 
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
@@ -39,10 +39,10 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="ACTIVE"
-                android:textSize="28sp"
+                android:textSize="32sp"
                 android:textStyle="bold"
                 android:textColor="#10B981"
-                android:layout_marginTop="4dp" />
+                android:layout_marginTop="8dp" />
 
             <View
                 android:layout_width="60dp"
@@ -84,5 +84,18 @@
         android:textSize="16sp"
         android:textStyle="bold"
         app:cornerRadius="16dp" />
+
+    <Button
+        android:id="@+id/btn_support"
+        style="@style/Widget.Material3.Button.FilledButton"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_marginTop="16dp"
+        android:text="CALL SUPPORT"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:visibility="gone"
+        app:cornerRadius="16dp"
+        app:backgroundTint="#ef4444" />
 
 </LinearLayout>

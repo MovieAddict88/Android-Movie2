@@ -2,6 +2,11 @@
 // install.php
 $config_file = 'includes/db.php';
 
+if (file_exists($config_file)) {
+    header("Location: index.php");
+    exit;
+}
+
 if (isset($_POST['install'])) {
     $host = $_POST['host'];
     $dbname = $_POST['dbname'];
