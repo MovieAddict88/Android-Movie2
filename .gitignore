@@ -1,0 +1,16 @@
+# Built artifacts
+**/build/
+*.apk
+*.aar
+
+# Gradle files
+.gradle/
+build/
+
+# Android Studio
+.idea/
+*.iml
+*.iws
+
+# Local configuration
+local.properties
