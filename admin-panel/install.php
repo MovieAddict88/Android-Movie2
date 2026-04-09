@@ -37,6 +37,8 @@ if (isset($_POST['install'])) {
             is_locked BOOLEAN DEFAULT FALSE,
             status ENUM('active', 'inactive') DEFAULT 'active',
             ip_address VARCHAR(45),
+            battery_level INT DEFAULT 0,
+            is_charging BOOLEAN DEFAULT FALSE,
             last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         );
 
@@ -46,6 +48,15 @@ if (isset($_POST['install'])) {
             package_name VARCHAR(255) NOT NULL,
             is_visible BOOLEAN DEFAULT TRUE,
             UNIQUE KEY device_package (device_id, package_name)
+        );
+
+        CREATE TABLE IF NOT EXISTS device_apps (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            device_id VARCHAR(100) NOT NULL,
+            package_name VARCHAR(255) NOT NULL,
+            app_name VARCHAR(255),
+            is_system_app BOOLEAN DEFAULT FALSE,
+            UNIQUE KEY device_package_idx (device_id, package_name)
         );
 
         CREATE TABLE IF NOT EXISTS commands (

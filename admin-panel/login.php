@@ -8,20 +8,24 @@ if (isset($_SESSION['user_id'])) {
 }
 
 if (isset($_POST['login'])) {
-    $username = $_POST['username'];
-    $password = $_POST['password'];
+    if (!validate_csrf_token($_POST['csrf_token'] ?? '')) {
+        $error = "CSRF validation failed";
+    } else {
+        $username = $_POST['username'];
+        $password = $_POST['password'];
 
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
     $stmt->execute([$username]);
     $user = $stmt->fetch();
 
-    if ($user && password_verify($password, $user['password'])) {
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['username'] = $user['username'];
-        header("Location: index.php");
-        exit;
-    } else {
-        $error = "Invalid username or password";
+        if ($user && password_verify($password, $user['password'])) {
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['username'] = $user['username'];
+            header("Location: index.php");
+            exit;
+        } else {
+            $error = "Invalid username or password";
+        }
     }
 }
 ?>
@@ -38,6 +42,7 @@ if (isset($_POST['login'])) {
         <h2 style="text-align: center;">Admin Login</h2>
         <?php if (isset($error)) echo "<p style='color: var(--danger);'>$error</p>"; ?>
         <form method="post">
+            <input type="hidden" name="csrf_token" value="<?php echo get_csrf_token(); ?>">
             <div style="margin-bottom: 1rem;">
                 <label>Username</label>
                 <input type="text" name="username" class="btn" style="width: 100%; border: 1px solid var(--border-color); cursor: text;" required>

@@ -9,23 +9,57 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Handle actions
-if (isset($_POST['add_device'])) {
-    $device_id = $_POST['device_id'];
-    $model = $_POST['model'];
-    $owner = $_POST['owner_name'];
-    $rental_end = $_POST['rental_end'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!validate_csrf_token($_POST['csrf_token'] ?? '')) {
+        die("CSRF validation failed");
+    }
 
-    $stmt = $pdo->prepare("INSERT INTO devices (device_id, model, owner_name, rental_end_time) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE model=?, owner_name=?, rental_end_time=?");
-    $stmt->execute([$device_id, $model, $owner, $rental_end, $model, $owner, $rental_end]);
-}
+    if (isset($_POST['add_device'])) {
+        $device_id = sanitize_input($_POST['device_id']);
+        $model = sanitize_input($_POST['model']);
+        $owner = sanitize_input($_POST['owner_name']);
+        $rental_end = $_POST['rental_end'];
 
-if (isset($_POST['send_app_command'])) {
-    $device_id = $_POST['target_device_id'];
-    $package_name = $_POST['package_name'];
-    $action = $_POST['app_action']; // hide_app or show_app
+        // Validation
+        if (!preg_match('/^[a-zA-Z0-9_\-]+$/', $device_id)) {
+            $error = "Invalid Device ID format";
+        } elseif (strlen($device_id) > 100 || strlen($model) > 100 || strlen($owner) > 100) {
+            $error = "Input too long";
+        } else {
+            $stmt = $pdo->prepare("INSERT INTO devices (device_id, model, owner_name, rental_end_time) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE model=?, owner_name=?, rental_end_time=?");
+            $stmt->execute([$device_id, $model, $owner, $rental_end, $model, $owner, $rental_end]);
+        }
+    }
 
-    $stmt = $pdo->prepare("INSERT INTO commands (device_id, command, payload) VALUES (?, ?, ?)");
-    $stmt->execute([$device_id, $action, $package_name]);
+    if (isset($_POST['send_app_command'])) {
+        $device_id = sanitize_input($_POST['target_device_id']);
+        $package_name = sanitize_input($_POST['package_name']);
+        $action = $_POST['app_action']; // hide_app or show_app
+
+        if (in_array($action, ['hide_app', 'show_app'])) {
+            $stmt = $pdo->prepare("INSERT INTO commands (device_id, command, payload) VALUES (?, ?, ?)");
+            $stmt->execute([$device_id, $action, $package_name]);
+        }
+    }
+
+    if (isset($_POST['bulk_action'])) {
+        $action = $_POST['bulk_action'];
+        if ($action == 'lock_all') {
+            $pdo->exec("UPDATE devices SET is_locked = 1");
+            $devices = $pdo->query("SELECT device_id FROM devices")->fetchAll();
+            $stmt = $pdo->prepare("INSERT INTO commands (device_id, command) VALUES (?, 'lock')");
+            foreach ($devices as $d) {
+                $stmt->execute([$d['device_id']]);
+            }
+        } elseif ($action == 'unlock_all') {
+            $pdo->exec("UPDATE devices SET is_locked = 0");
+            $devices = $pdo->query("SELECT device_id FROM devices")->fetchAll();
+            $stmt = $pdo->prepare("INSERT INTO commands (device_id, command) VALUES (?, 'unlock')");
+            foreach ($devices as $d) {
+                $stmt->execute([$d['device_id']]);
+            }
+        }
+    }
 }
 
 if (isset($_GET['lock'])) {
@@ -69,6 +103,9 @@ if (isset($_GET['delete'])) {
 }
 
 $devices = $pdo->query("SELECT * FROM devices ORDER BY last_seen DESC")->fetchAll();
+
+// Fetch apps for all devices to use in the modal (or fetch via AJAX when modal opens)
+// For simplicity, we'll fetch via AJAX or just have it in a data attribute
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -99,9 +136,16 @@ $devices = $pdo->query("SELECT * FROM devices ORDER BY last_seen DESC")->fetchAl
         </header>
 
         <main class="container">
+            <?php if (isset($error)): ?>
+                <div style="background: var(--danger); color: white; padding: 1rem; border-radius: var(--border-radius); margin-bottom: 1rem;">
+                    <?php echo $error; ?>
+                </div>
+            <?php endif; ?>
+
             <div class="card">
                 <h2>Add / Update Device</h2>
                 <form method="post">
+                    <input type="hidden" name="csrf_token" value="<?php echo get_csrf_token(); ?>">
                     <div class="form-inline">
                         <div class="form-group">
                             <label>Device ID (IMEI/Serial)</label>
@@ -125,9 +169,16 @@ $devices = $pdo->query("SELECT * FROM devices ORDER BY last_seen DESC")->fetchAl
             </div>
 
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
                     <h2>Device List</h2>
-                    <input type="text" id="deviceSearch" placeholder="Search devices..." class="input-text" style="max-width: 300px;">
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <form method="post" style="display: inline;">
+                            <input type="hidden" name="csrf_token" value="<?php echo get_csrf_token(); ?>">
+                            <button type="submit" name="bulk_action" value="lock_all" class="btn btn-danger btn-sm" onclick="return confirm('Lock all devices?')">Lock All</button>
+                            <button type="submit" name="bulk_action" value="unlock_all" class="btn btn-primary btn-sm" onclick="return confirm('Unlock all devices?')">Unlock All</button>
+                        </form>
+                        <input type="text" id="deviceSearch" placeholder="Search devices..." class="input-text" style="max-width: 200px;">
+                    </div>
                 </div>
                 <table id="devicesTable">
                     <thead>
@@ -135,7 +186,7 @@ $devices = $pdo->query("SELECT * FROM devices ORDER BY last_seen DESC")->fetchAl
                             <th>Device ID</th>
                             <th>Model</th>
                             <th>Owner</th>
-                            <th>IP Address</th>
+                            <th>IP / Battery</th>
                             <th>Status</th>
                             <th>Last Seen</th>
                             <th>Actions</th>
@@ -154,7 +205,18 @@ $devices = $pdo->query("SELECT * FROM devices ORDER BY last_seen DESC")->fetchAl
                                 <?php echo htmlspecialchars($device['model']); ?>
                             </td>
                             <td><?php echo htmlspecialchars($device['owner_name']); ?></td>
-                            <td><small><?php echo htmlspecialchars($device['ip_address'] ?? 'Unknown'); ?></small></td>
+                            <td>
+                                <small><?php echo htmlspecialchars($device['ip_address'] ?? 'Unknown'); ?></small>
+                                <?php if (isset($device['battery_level'])): ?>
+                                    <div style="display: flex; align-items: center; gap: 4px; margin-top: 4px;">
+                                        <div style="width: 24px; height: 12px; border: 1px solid #64748b; border-radius: 2px; position: relative; padding: 1px;">
+                                            <div style="width: <?php echo $device['battery_level']; ?>%; height: 100%; background: <?php echo $device['battery_level'] > 20 ? 'var(--success)' : 'var(--danger)'; ?>;"></div>
+                                            <div style="position: absolute; right: -3px; top: 3px; width: 2px; height: 4px; background: #64748b;"></div>
+                                        </div>
+                                        <small><?php echo $device['battery_level']; ?>%<?php echo $device['is_charging'] ? ' ⚡' : ''; ?></small>
+                                    </div>
+                                <?php endif; ?>
+                            </td>
                             <td>
                                 <span class="status-badge <?php echo $device['is_locked'] ? 'status-inactive' : 'status-active'; ?>">
                                     <?php echo $device['is_locked'] ? 'LOCKED' : 'ACTIVE'; ?>
@@ -185,15 +247,18 @@ $devices = $pdo->query("SELECT * FROM devices ORDER BY last_seen DESC")->fetchAl
         <div class="card modal-content" style="width: 400px; margin-bottom: 0;">
             <h2 id="modalTitle">App Control</h2>
             <form method="post">
+                <input type="hidden" name="csrf_token" value="<?php echo get_csrf_token(); ?>">
                 <input type="hidden" name="target_device_id" id="modalDeviceId">
                 <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Device App Inventory</label>
+                    <div id="appInventoryContainer"></div>
+
                     <label>Package Name</label>
                     <input type="text" name="package_name" id="packageNameInput" class="input-text" required placeholder="com.example.app">
                     <div class="suggestions">
+                        <small>Common:</small>
                         <span class="suggestion-tag" onclick="setPackage('com.android.chrome')">Chrome</span>
                         <span class="suggestion-tag" onclick="setPackage('com.google.android.youtube')">YouTube</span>
-                        <span class="suggestion-tag" onclick="setPackage('com.facebook.katana')">Facebook</span>
-                        <span class="suggestion-tag" onclick="setPackage('com.whatsapp')">WhatsApp</span>
                     </div>
                 </div>
                 <div class="form-group" style="margin-bottom: 1.5rem;">
@@ -212,6 +277,30 @@ $devices = $pdo->query("SELECT * FROM devices ORDER BY last_seen DESC")->fetchAl
     </div>
 
     <script>
+        async function fetchAppInventory(deviceId) {
+            const container = document.getElementById('appInventoryContainer');
+            container.innerHTML = 'Loading apps...';
+            try {
+                const response = await fetch('api/get_device_apps.php?device_id=' + deviceId);
+                const apps = await response.json();
+                if (apps && apps.length > 0) {
+                    let html = '<div style="max-height: 200px; overflow-y: auto; border: 1px solid #eee; padding: 5px; margin-bottom: 10px; border-radius: 4px;">';
+                    apps.forEach(app => {
+                        html += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 5px; border-bottom: 1px solid #f9f9f9; font-size: 0.85rem;">
+                                    <span>${app.app_name} <br><small style="color: #888">${app.package_name}</small></span>
+                                    <button type="button" class="suggestion-tag" onclick="setPackage('${app.package_name}')">Select</button>
+                                 </div>`;
+                    });
+                    html += '</div>';
+                    container.innerHTML = html;
+                } else {
+                    container.innerHTML = 'No app data available for this device.';
+                }
+            } catch (e) {
+                container.innerHTML = 'Error loading apps.';
+            }
+        }
+
         document.getElementById('deviceSearch').addEventListener('keyup', function() {
             const query = this.value.toLowerCase();
             const rows = document.querySelectorAll('#devicesTable tbody tr');
@@ -226,6 +315,7 @@ $devices = $pdo->query("SELECT * FROM devices ORDER BY last_seen DESC")->fetchAl
             document.getElementById('modalDeviceId').value = deviceId;
             document.getElementById('modalTitle').innerText = 'App Control: ' + deviceId;
             document.getElementById('appModal').style.display = 'flex';
+            fetchAppInventory(deviceId);
         }
         function closeAppControl() {
             document.getElementById('appModal').style.display = 'none';

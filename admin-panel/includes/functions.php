@@ -66,3 +66,41 @@ function is_online($last_seen, $minutes = 5) {
         return false;
     }
 }
+
+/**
+ * Generates or returns a CSRF token.
+ *
+ * @return string
+ */
+function get_csrf_token() {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+/**
+ * Validates a CSRF token.
+ *
+ * @param string|null $token
+ * @return bool
+ */
+function validate_csrf_token($token) {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    return !empty($token) && hash_equals($_SESSION['csrf_token'], $token);
+}
+
+/**
+ * Sanitizes input data.
+ *
+ * @param string $data
+ * @return string
+ */
+function sanitize_input($data) {
+    return htmlspecialchars(trim($data), ENT_QUOTES, 'UTF-8');
+}
