@@ -14,6 +14,36 @@ $locked_devices = $pdo->query("SELECT COUNT(*) FROM devices WHERE is_locked = 1"
 
 // Fetch devices
 $devices = $pdo->query("SELECT * FROM devices ORDER BY last_seen DESC LIMIT 10")->fetchAll();
+
+function time_elapsed_string($datetime, $full = false) {
+    if ($datetime == null) return "Never";
+    $now = new DateTime;
+    $ago = new DateTime($datetime);
+    $diff = $now->diff($ago);
+
+    $diff->w = floor($diff->d / 7);
+    $diff->d -= $diff->w * 7;
+
+    $string = array(
+        'y' => 'year',
+        'm' => 'month',
+        'w' => 'week',
+        'd' => 'day',
+        'h' => 'hour',
+        'i' => 'minute',
+        's' => 'second',
+    );
+    foreach ($string as $k => &$v) {
+        if ($diff->$k) {
+            $v = $diff->$k . ' ' . $v . ($diff->$k > 1 ? 's' : '');
+        } else {
+            unset($string[$k]);
+        }
+    }
+
+    if (!$full) $string = array_slice($string, 0, 1);
+    return $string ? implode(', ', $string) . ' ago' : 'just now';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -24,68 +54,79 @@ $devices = $pdo->query("SELECT * FROM devices ORDER BY last_seen DESC LIMIT 10")
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <header>
-        <div class="container header-content">
-            <h1 style="font-size: 1.5rem; margin-bottom: 0;">Rental Admin</h1>
-            <nav>
-                <a href="index.php">Dashboard</a>
-                <a href="devices.php">Devices</a>
-                <a href="logout.php">Logout</a>
-            </nav>
-        </div>
-    </header>
+    <aside class="sidebar">
+        <h1>Rental Admin</h1>
+        <nav>
+            <ul>
+                <li><a href="index.php" class="active">Dashboard</a></li>
+                <li><a href="devices.php">Devices</a></li>
+                <li><a href="logout.php">Logout</a></li>
+            </ul>
+        </nav>
+    </aside>
 
-    <main class="container">
-        <div class="grid">
-            <div class="card">
-                <h3>Total Devices</h3>
-                <p style="font-size: 2rem; font-weight: bold; color: var(--primary-color);"><?php echo $total_devices; ?></p>
+    <div class="main-wrapper">
+        <header>
+            <div class="container header-content">
+                <h2 style="margin-bottom: 0;">Dashboard Overview</h2>
+                <div class="user-info">
+                    <span>Admin</span>
+                </div>
             </div>
-            <div class="card">
-                <h3>Active Rentals</h3>
-                <p style="font-size: 2rem; font-weight: bold; color: var(--success);"><?php echo $active_rentals; ?></p>
-            </div>
-            <div class="card">
-                <h3>Locked Devices</h3>
-                <p style="font-size: 2rem; font-weight: bold; color: var(--danger);"><?php echo $locked_devices; ?></p>
-            </div>
-        </div>
+        </header>
 
-        <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h2>Recent Devices</h2>
-                <a href="devices.php" class="btn btn-primary">View All</a>
+        <main class="container">
+            <div class="grid">
+                <div class="card">
+                    <h3>Total Devices</h3>
+                    <p style="font-size: 2.5rem; font-weight: bold; color: var(--primary-color);"><?php echo $total_devices; ?></p>
+                </div>
+                <div class="card">
+                    <h3>Active Rentals</h3>
+                    <p style="font-size: 2.5rem; font-weight: bold; color: var(--success);"><?php echo $active_rentals; ?></p>
+                </div>
+                <div class="card">
+                    <h3>Locked Devices</h3>
+                    <p style="font-size: 2.5rem; font-weight: bold; color: var(--danger);"><?php echo $locked_devices; ?></p>
+                </div>
             </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Device ID</th>
-                        <th>Model</th>
-                        <th>Owner</th>
-                        <th>Rental Ends</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($devices as $device): ?>
-                    <tr>
-                        <td><?php echo htmlspecialchars($device['device_id']); ?></td>
-                        <td><?php echo htmlspecialchars($device['model']); ?></td>
-                        <td><?php echo htmlspecialchars($device['owner_name']); ?></td>
-                        <td><?php echo $device['rental_end_time'] ?: 'N/A'; ?></td>
-                        <td>
-                            <span class="status-badge <?php echo $device['is_locked'] ? 'status-inactive' : 'status-active'; ?>">
-                                <?php echo $device['is_locked'] ? 'LOCKED' : 'ACTIVE'; ?>
-                            </span>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                    <?php if (empty($devices)): ?>
-                    <tr><td colspan="5" style="text-align: center;">No devices found.</td></tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-    </main>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h2>Recent Activity</h2>
+                    <a href="devices.php" class="btn btn-primary">View All Devices</a>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Device ID</th>
+                            <th>Model</th>
+                            <th>Owner</th>
+                            <th>Status</th>
+                            <th>Last Seen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($devices as $device): ?>
+                        <tr>
+                            <td><code><?php echo htmlspecialchars($device['device_id']); ?></code></td>
+                            <td><?php echo htmlspecialchars($device['model']); ?></td>
+                            <td><?php echo htmlspecialchars($device['owner_name']); ?></td>
+                            <td>
+                                <span class="status-badge <?php echo $device['is_locked'] ? 'status-inactive' : 'status-active'; ?>">
+                                    <?php echo $device['is_locked'] ? 'LOCKED' : 'ACTIVE'; ?>
+                                </span>
+                            </td>
+                            <td><span class="last-seen"><?php echo time_elapsed_string($device['last_seen']); ?></span></td>
+                        </tr>
+                        <?php endforeach; ?>
+                        <?php if (empty($devices)): ?>
+                        <tr><td colspan="5" style="text-align: center;">No devices found.</td></tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
 </body>
 </html>

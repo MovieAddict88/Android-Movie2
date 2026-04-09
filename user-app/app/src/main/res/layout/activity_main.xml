@@ -8,36 +8,50 @@
     android:background="#FFFFFF">
 
     <TextView
+        android:id="@+id/tv_status_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="RENTAL STATUS"
+        android:textSize="14sp"
+        android:letterSpacing="0.1"
+        android:textColor="#666666" />
+
+    <TextView
         android:id="@+id/tv_status"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Device Status"
-        android:textSize="24sp"
+        android:text="ACTIVE"
+        android:textSize="32sp"
         android:textStyle="bold"
-        android:textColor="#1a73e8" />
+        android:textColor="#10B981"
+        android:layout_marginTop="4dp" />
 
     <TextView
         android:id="@+id/tv_timer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="48dp"
         android:text="00:00:00"
-        android:textSize="48sp"
-        android:textColor="#333333" />
+        android:textSize="64sp"
+        android:textColor="#1e293b" />
 
     <TextView
         android:id="@+id/tv_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Remaining Rental Time"
-        android:textSize="16sp"
-        android:textColor="#666666" />
+        android:text="REMAINING TIME"
+        android:textSize="14sp"
+        android:letterSpacing="0.1"
+        android:textColor="#64748b"
+        android:layout_marginTop="8dp" />
 
     <Button
         android:id="@+id/btn_admin"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="48dp"
-        android:text="Enable Device Admin" />
+        android:layout_height="56dp"
+        android:layout_marginTop="64dp"
+        android:text="ENABLE DEVICE ADMIN"
+        android:backgroundTint="#2563eb"
+        android:textColor="#FFFFFF" />
 
 </LinearLayout>

@@ -1,13 +1,19 @@
 package com.example.phonerental.user
 
 import android.app.admin.DevicePolicyManager
+import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.example.phonerental.user.databinding.ActivityMainBinding
 import java.text.SimpleDateFormat
 import java.util.*
@@ -17,6 +23,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var devicePolicyManager: DevicePolicyManager
     private lateinit var adminComponent: ComponentName
     private var countDownTimer: CountDownTimer? = null
+
+    private val refreshReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            updateUI()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,13 +49,34 @@ class MainActivity : AppCompatActivity() {
         updateUI()
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(refreshReceiver, IntentFilter(BeaconService.ACTION_REFRESH_UI), Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(refreshReceiver, IntentFilter(BeaconService.ACTION_REFRESH_UI))
+        }
+        updateUI()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        unregisterReceiver(refreshReceiver)
+    }
+
     private fun updateUI() {
         val prefs = getSharedPreferences("rental_prefs", Context.MODE_PRIVATE)
         val endTimeStr = prefs.getString("rental_end", null)
         val isLocked = prefs.getBoolean("is_locked", false)
 
         if (isLocked) {
+            binding.tvStatus.text = "LOCKED"
+            binding.tvStatus.setTextColor(Color.parseColor("#ef4444"))
             enterKioskMode()
+        } else {
+            binding.tvStatus.text = "ACTIVE"
+            binding.tvStatus.setTextColor(Color.parseColor("#10B981"))
+            exitKioskMode()
         }
 
         if (endTimeStr != null) {
@@ -57,11 +90,19 @@ class MainActivity : AppCompatActivity() {
                     startTimer(diff)
                 } else {
                     binding.tvTimer.text = "EXPIRED"
+                    binding.tvStatus.text = "EXPIRED"
+                    binding.tvStatus.setTextColor(Color.parseColor("#ef4444"))
                     enterKioskMode()
                 }
             } catch (e: Exception) {
                 binding.tvTimer.text = "--:--:--"
             }
+        }
+
+        if (devicePolicyManager.isAdminActive(adminComponent)) {
+            binding.btnAdmin.visibility = View.GONE
+        } else {
+            binding.btnAdmin.visibility = View.VISIBLE
         }
     }
 
@@ -77,6 +118,8 @@ class MainActivity : AppCompatActivity() {
 
             override fun onFinish() {
                 binding.tvTimer.text = "EXPIRED"
+                binding.tvStatus.text = "EXPIRED"
+                binding.tvStatus.setTextColor(Color.parseColor("#ef4444"))
                 enterKioskMode()
             }
         }.start()
@@ -84,19 +127,21 @@ class MainActivity : AppCompatActivity() {
 
     private fun enterKioskMode() {
         if (devicePolicyManager.isAdminActive(adminComponent)) {
-            // In a real device owner app, we'd use startLockTask()
-            // For simple admin, we can force lock
             try {
+                // For simplicity, we use lockNow to immediately block access
+                // Real kiosk mode would use startLockTask() but needs Device Owner
                 devicePolicyManager.lockNow()
-                Toast.makeText(this, "Rental Expired - Device Locked", Toast.LENGTH_LONG).show()
             } catch (e: SecurityException) {
-                Toast.makeText(this, "Admin not active", Toast.LENGTH_SHORT).show()
+                //Toast.makeText(this, "Admin not active", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
+    private fun exitKioskMode() {
+        // Just clear flags or stop lock tasks if they were active
+    }
+
     override fun onBackPressed() {
-        // Disable back button if locked/expired
         val prefs = getSharedPreferences("rental_prefs", Context.MODE_PRIVATE)
         if (prefs.getBoolean("is_locked", false)) {
             return
