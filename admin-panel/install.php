@@ -31,6 +31,7 @@ if (isset($_POST['install'])) {
             rental_end_time DATETIME,
             is_locked BOOLEAN DEFAULT FALSE,
             status ENUM('active', 'inactive') DEFAULT 'active',
+            ip_address VARCHAR(45),
             last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         );
 

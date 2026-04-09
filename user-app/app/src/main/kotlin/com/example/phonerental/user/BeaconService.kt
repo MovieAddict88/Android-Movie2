@@ -91,6 +91,7 @@ class BeaconService : Service() {
 
     private fun startPolling() {
         serviceScope.launch {
+            var delayMs = 60000L
             while (isActive) {
                 try {
                     val status = apiService.getStatus(deviceId)
@@ -98,10 +99,13 @@ class BeaconService : Service() {
 
                     val cmdResponse = apiService.getCommands(deviceId)
                     cmdResponse.commands.forEach { handleCommand(it) }
+
+                    delayMs = 60000L // Reset delay on success
                 } catch (e: Exception) {
                     Log.e("BeaconService", "Error polling: ${e.message}")
+                    delayMs = (delayMs * 1.5).toLong().coerceAtMost(300000L) // Exponential backoff up to 5 min
                 }
-                delay(60000) // Poll every 1 minute
+                delay(delayMs)
             }
         }
     }

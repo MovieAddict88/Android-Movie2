@@ -20,9 +20,10 @@ if (!$device_id) {
 }
 
 try {
-    // Also update last_seen when status is checked (like a heartbeat)
-    $stmt = $pdo->prepare("UPDATE devices SET last_seen = NOW() WHERE device_id = ?");
-    $stmt->execute([$device_id]);
+    // Also update last_seen and ip_address when status is checked (like a heartbeat)
+    $ip_address = $_SERVER['REMOTE_ADDR'] ?? null;
+    $stmt = $pdo->prepare("UPDATE devices SET last_seen = NOW(), ip_address = ? WHERE device_id = ?");
+    $stmt->execute([$ip_address, $device_id]);
 
     $stmt = $pdo->prepare("SELECT rental_end_time, is_locked FROM devices WHERE device_id = ?");
     $stmt->execute([$device_id]);

@@ -67,13 +67,17 @@ class MainActivity : AppCompatActivity() {
         apiService = retrofit.create(AdminApiService::class.java)
 
         binding.rvDevices.layoutManager = LinearLayoutManager(this)
+        binding.swipeRefresh.setOnRefreshListener {
+            refreshDevices()
+        }
         refreshDevices()
     }
 
     private fun refreshDevices() {
+        binding.swipeRefresh.isRefreshing = true
         scope.launch {
             try {
-                val devices = apiService.getDevices()
+                val devices = withContext(Dispatchers.IO) { apiService.getDevices() }
                 binding.rvDevices.adapter = DeviceAdapter(devices) { device, command ->
                     if (command == "hide_app" || command == "show_app") {
                         showAppCommandDialog(device.device_id)
@@ -83,6 +87,8 @@ class MainActivity : AppCompatActivity() {
                 }
             } catch (e: Exception) {
                 Toast.makeText(this@MainActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+            } finally {
+                binding.swipeRefresh.isRefreshing = false
             }
         }
     }
@@ -90,7 +96,7 @@ class MainActivity : AppCompatActivity() {
     private fun sendCommand(deviceId: String, command: String, payload: String? = null) {
         scope.launch {
             try {
-                val response = apiService.sendCommand(deviceId, command, payload)
+                val response = withContext(Dispatchers.IO) { apiService.sendCommand(deviceId, command, payload) }
                 Toast.makeText(this@MainActivity, response.message, Toast.LENGTH_SHORT).show()
                 refreshDevices()
             } catch (e: Exception) {
