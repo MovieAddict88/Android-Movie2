@@ -84,6 +84,36 @@ body {
     flex-direction: column;
 }
 
+/* Modal Enhancements */
+.modal-content {
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.suggestion-tag {
+    background: #f1f5f9;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+}
+
+.suggestion-tag:hover {
+    background: #e2e8f0;
+}
+
 .container {
     width: 95%;
     max-width: 1200px;

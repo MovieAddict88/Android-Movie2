@@ -13,6 +13,9 @@ if (!$input || !isset($input['device_id'])) {
 $device_id = $input['device_id'];
 $model = $input['model'] ?? 'Unknown';
 
+// Security check
+validate_api_key();
+
 $stmt = $pdo->prepare("INSERT INTO devices (device_id, model) VALUES (?, ?) ON DUPLICATE KEY UPDATE model = ?");
 if ($stmt->execute([$device_id, $model, $model])) {
     echo json_encode(['status' => 'success', 'message' => 'Device registered']);

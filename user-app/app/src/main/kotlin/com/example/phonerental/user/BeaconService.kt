@@ -24,9 +24,14 @@ interface ApiService {
 
     @GET("api/command.php")
     suspend fun getCommands(@Query("device_id") deviceId: String): CommandResponse
+
+    @POST("api/register.php")
+    suspend fun register(@retrofit2.http.Body body: RegisterRequest): GenericResponse
 }
 
-data class StatusResponse(val status: String, val rental_end: String?, val is_locked: Boolean)
+data class StatusResponse(val status: String, val message: String?, val rental_end: String?, val is_locked: Boolean)
+data class RegisterRequest(val device_id: String, val model: String)
+data class GenericResponse(val status: String, val message: String)
 data class CommandResponse(val status: String, val commands: List<Command>)
 data class Command(val id: Int, val command: String, val payload: String?)
 
@@ -95,6 +100,16 @@ class BeaconService : Service() {
             while (isActive) {
                 try {
                     val status = apiService.getStatus(deviceId)
+
+                    if (status.status == "error" && status.message?.contains("not found", ignoreCase = true) == true) {
+                        Log.d("BeaconService", "Device not found, registering...")
+                        val registerResponse = apiService.register(RegisterRequest(deviceId, android.os.Build.MODEL))
+                        Log.d("BeaconService", "Registration result: ${registerResponse.status}")
+                        // Wait a bit before next attempt to let server process
+                        delay(5000)
+                        continue
+                    }
+
                     handleStatus(status)
 
                     val cmdResponse = apiService.getCommands(deviceId)
