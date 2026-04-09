@@ -44,21 +44,21 @@ $devices = $pdo->query("SELECT * FROM devices ORDER BY last_seen DESC LIMIT 10")
 
         <main class="container">
             <div class="grid">
-                <div class="card">
-                    <h3>Total Devices</h3>
-                    <p style="font-size: 2.5rem; font-weight: bold; color: var(--primary-color);"><?php echo $total_devices; ?></p>
+                <div class="card" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: none;">
+                    <h3 style="color: #1e40af; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Total Devices</h3>
+                    <p style="font-size: 2.5rem; font-weight: 800; color: #1e3a8a; margin-top: 0.5rem;"><?php echo $total_devices; ?></p>
                 </div>
-                <div class="card">
-                    <h3>Active Rentals</h3>
-                    <p style="font-size: 2.5rem; font-weight: bold; color: var(--success);"><?php echo $active_rentals; ?></p>
+                <div class="card" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: none;">
+                    <h3 style="color: #065f46; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Active Rentals</h3>
+                    <p style="font-size: 2.5rem; font-weight: 800; color: #064e3b; margin-top: 0.5rem;"><?php echo $active_rentals; ?></p>
                 </div>
-                <div class="card">
-                    <h3>Online Devices</h3>
-                    <p style="font-size: 2.5rem; font-weight: bold; color: var(--primary-color);"><?php echo $online_devices; ?></p>
+                <div class="card" style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: none;">
+                    <h3 style="color: #92400e; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Online Devices</h3>
+                    <p style="font-size: 2.5rem; font-weight: 800; color: #78350f; margin-top: 0.5rem;"><?php echo $online_devices; ?></p>
                 </div>
-                <div class="card">
-                    <h3>Locked Devices</h3>
-                    <p style="font-size: 2.5rem; font-weight: bold; color: var(--danger);"><?php echo $locked_devices; ?></p>
+                <div class="card" style="background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border: none;">
+                    <h3 style="color: #991b1b; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Locked Devices</h3>
+                    <p style="font-size: 2.5rem; font-weight: 800; color: #7f1d1d; margin-top: 0.5rem;"><?php echo $locked_devices; ?></p>
                 </div>
             </div>
 

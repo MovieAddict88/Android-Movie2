@@ -4,7 +4,14 @@ header('Content-Type: application/json');
 require_once '../includes/db.php';
 
 // Security check
-validate_api_key();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Allow either API Key (for Admin App) or Session (for Web Panel)
+if (!isset($_SESSION['user_id'])) {
+    validate_api_key();
+}
 
 if (!isset($pdo)) {
     header('HTTP/1.1 500 Internal Server Error');

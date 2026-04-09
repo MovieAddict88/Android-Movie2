@@ -231,6 +231,7 @@ $devices = $pdo->query("SELECT * FROM devices ORDER BY last_seen DESC")->fetchAl
                                         <a href="?lock=<?php echo $device['id']; ?>" class="btn btn-danger btn-sm">Lock</a>
                                     <?php endif; ?>
                                     <button onclick="openAppControl('<?php echo $device['device_id']; ?>')" class="btn btn-primary btn-sm" style="background: var(--warning);">Apps</button>
+                                    <button onclick="openMessageControl('<?php echo $device['device_id']; ?>')" class="btn btn-primary btn-sm" style="background: var(--primary-color);">Message</button>
                                     <a href="?delete=<?php echo $device['id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this device?')">Delete</a>
                                 </div>
                             </td>
@@ -276,7 +277,51 @@ $devices = $pdo->query("SELECT * FROM devices ORDER BY last_seen DESC")->fetchAl
         </div>
     </div>
 
+    <!-- Message Control Modal -->
+    <div id="messageModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:2000; justify-content:center; align-items:center;">
+        <div class="card modal-content" style="width: 400px; margin-bottom: 0;">
+            <h2 id="messageModalTitle">Send Message</h2>
+            <form action="api/send_command.php" method="post" id="messageForm">
+                <input type="hidden" name="device_id" id="messageDeviceId">
+                <input type="hidden" name="command" value="message">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Message Text</label>
+                    <textarea name="payload" id="messageInput" class="input-text" required placeholder="Enter message to display on device..." style="height: 100px; resize: none;"></textarea>
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+                    <button type="button" onclick="closeMessageControl()" class="btn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Send Message</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
+        function openMessageControl(deviceId) {
+            document.getElementById('messageDeviceId').value = deviceId;
+            document.getElementById('messageModalTitle').innerText = 'Send Message to: ' + deviceId;
+            document.getElementById('messageModal').style.display = 'flex';
+        }
+        function closeMessageControl() {
+            document.getElementById('messageModal').style.display = 'none';
+        }
+
+        document.getElementById('messageForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            try {
+                const response = await fetch('api/send_command.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                alert(result.message);
+                if (result.status === 'success') closeMessageControl();
+            } catch (e) {
+                alert('Error sending message');
+            }
+        });
+
         async function fetchAppInventory(deviceId) {
             const container = document.getElementById('appInventoryContainer');
             container.innerHTML = 'Loading apps...';

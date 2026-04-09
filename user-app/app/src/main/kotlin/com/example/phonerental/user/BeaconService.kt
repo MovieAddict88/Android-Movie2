@@ -63,6 +63,8 @@ class BeaconService : Service() {
 
     companion object {
         const val ACTION_REFRESH_UI = "com.example.phonerental.user.REFRESH_UI"
+        const val ACTION_SHOW_MESSAGE = "com.example.phonerental.user.SHOW_MESSAGE"
+        const val EXTRA_MESSAGE = "extra_message"
     }
 
     override fun onCreate() {
@@ -175,7 +177,16 @@ class BeaconService : Service() {
             "show_app" -> {
                 command.payload?.let { setAppHidden(it, false) }
             }
+            "message" -> {
+                command.payload?.let { showMessage(it) }
+            }
         }
+    }
+
+    private fun showMessage(message: String) {
+        val intent = Intent(ACTION_SHOW_MESSAGE)
+        intent.putExtra(EXTRA_MESSAGE, message)
+        sendBroadcast(intent)
     }
 
     private fun updateLockState(locked: Boolean) {
