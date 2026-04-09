@@ -1,0 +1,4 @@
+<resources>
+    <string name="device_admin_label">Rental Manager</string>
+    <string name="device_admin_description">Enables remote management for rented devices.</string>
+</resources>
