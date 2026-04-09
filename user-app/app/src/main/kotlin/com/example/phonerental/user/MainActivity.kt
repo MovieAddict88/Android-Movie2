@@ -26,7 +26,18 @@ class MainActivity : AppCompatActivity() {
 
     private val refreshReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            updateUI()
+            if (intent?.action == BeaconService.ACTION_SHOW_MESSAGE) {
+                val message = intent.getStringExtra(BeaconService.EXTRA_MESSAGE)
+                if (message != null) {
+                    com.google.android.material.dialog.MaterialAlertDialogBuilder(this@MainActivity)
+                        .setTitle("System Message")
+                        .setMessage(message)
+                        .setPositiveButton("OK", null)
+                        .show()
+                }
+            } else {
+                updateUI()
+            }
         }
     }
 
@@ -62,17 +73,25 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        val filter = IntentFilter()
+        filter.addAction(BeaconService.ACTION_REFRESH_UI)
+        filter.addAction(BeaconService.ACTION_SHOW_MESSAGE)
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(refreshReceiver, IntentFilter(BeaconService.ACTION_REFRESH_UI), Context.RECEIVER_NOT_EXPORTED)
+            registerReceiver(refreshReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
         } else {
-            registerReceiver(refreshReceiver, IntentFilter(BeaconService.ACTION_REFRESH_UI))
+            registerReceiver(refreshReceiver, filter)
         }
         updateUI()
     }
 
     override fun onPause() {
         super.onPause()
-        unregisterReceiver(refreshReceiver)
+        try {
+            unregisterReceiver(refreshReceiver)
+        } catch (e: Exception) {
+            // Receiver might not be registered
+        }
     }
 
     private fun updateUI() {

@@ -13,58 +13,97 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
-
-        <TextView
-            android:id="@+id/tv_device_name"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Pixel 7 Pro"
-            android:textAppearance="?attr/textAppearanceTitleLarge"
-            android:textStyle="bold"
-            android:textColor="#1e293b"/>
-
-        <TextView
-            android:id="@+id/tv_owner"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Owner: John Doe"
-            android:textAppearance="?attr/textAppearanceTitleSmall"
-            android:textColor="#64748b"
-            android:layout_marginTop="2dp"/>
-
-        <TextView
-            android:id="@+id/tv_last_seen"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Last seen: 5m ago"
-            android:textSize="12sp"
-            android:textColor="#94a3b8"
-            android:layout_marginTop="4dp"/>
-
-        <TextView
-            android:id="@+id/tv_ip_address"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="IP: 192.168.1.1"
-            android:textSize="12sp"
-            android:textColor="#94a3b8" />
-
-        <TextView
-            android:id="@+id/tv_rental_end"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Ends: 2023-12-31"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:textColor="#64748b"
-            android:layout_marginTop="2dp"/>
+        android:padding="20dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_marginTop="16dp">
+            android:gravity="center_vertical">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tv_device_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Pixel 7 Pro"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="#0F172A"/>
+
+                <TextView
+                    android:id="@+id/tv_owner"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Owner: John Doe"
+                    android:textSize="14sp"
+                    android:textColor="#64748B"
+                    android:layout_marginTop="2dp"/>
+            </LinearLayout>
+
+            <ImageView
+                android:id="@+id/iv_status_dot"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:src="@android:drawable/presence_online"
+                android:layout_marginStart="8dp"
+                android:contentDescription="Online status" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#F1F5F9"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="16dp"/>
+
+        <GridLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:columnCount="2"
+            android:rowCount="2">
+
+            <TextView
+                android:id="@+id/tv_last_seen"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:text="Last seen: 5m ago"
+                android:textSize="12sp"
+                android:textColor="#94A3B8"/>
+
+            <TextView
+                android:id="@+id/tv_ip_address"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:text="IP: 192.168.1.1"
+                android:textSize="12sp"
+                android:textColor="#94A3B8"
+                android:gravity="end"/>
+
+            <TextView
+                android:id="@+id/tv_rental_end"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:layout_marginTop="4dp"
+                android:text="Ends: 2023-12-31"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="#475569"/>
+        </GridLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="20dp">
 
             <Button
                 android:id="@+id/btn_lock"
@@ -73,6 +112,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Lock"
+                android:textSize="13sp"
                 app:icon="@android:drawable/ic_lock_lock"
                 android:layout_marginEnd="4dp"/>
 
@@ -83,6 +123,17 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Unlock"
+                android:textSize="13sp"
+                android:layout_marginHorizontal="4dp"/>
+
+            <Button
+                android:id="@+id/btn_message"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Msg"
+                android:textSize="13sp"
                 android:layout_marginHorizontal="4dp"/>
 
             <Button
@@ -92,6 +143,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="0.8"
                 android:text="Apps"
+                android:textSize="13sp"
                 android:layout_marginStart="4dp"/>
         </LinearLayout>
 

@@ -11,18 +11,17 @@
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:cardCornerRadius="24dp"
-        app:cardElevation="0dp"
-        app:strokeColor="#E2E8F0"
-        app:strokeWidth="1dp">
+        app:cardCornerRadius="32dp"
+        app:cardElevation="12dp"
+        app:cardBackgroundColor="#FFFFFF"
+        app:strokeWidth="0dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:gravity="center"
-            android:padding="32dp"
-            android:background="#FFFFFF">
+            android:padding="40dp">
 
             <TextView
                 android:id="@+id/tv_status_label"
@@ -31,35 +30,35 @@
                 android:text="RENTAL STATUS"
                 android:textSize="12sp"
                 android:textStyle="bold"
-                android:letterSpacing="0.1"
-                android:textColor="#94A3B8" />
+                android:letterSpacing="0.15"
+                android:textColor="#64748B" />
 
             <TextView
                 android:id="@+id/tv_status"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="ACTIVE"
-                android:textSize="32sp"
+                android:textSize="36sp"
                 android:textStyle="bold"
                 android:textColor="#10B981"
-                android:layout_marginTop="8dp" />
+                android:layout_marginTop="12dp" />
 
             <View
-                android:layout_width="60dp"
-                android:layout_height="2dp"
+                android:layout_width="80dp"
+                android:layout_height="4dp"
                 android:background="#F1F5F9"
-                android:layout_marginTop="32dp"
-                android:layout_marginBottom="32dp"/>
+                android:layout_marginTop="36dp"
+                android:layout_marginBottom="36dp"/>
 
             <TextView
                 android:id="@+id/tv_timer"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="00:00:00"
-                android:textSize="56sp"
+                android:textSize="64sp"
                 android:textStyle="bold"
                 android:fontFamily="monospace"
-                android:textColor="#1E293B" />
+                android:textColor="#0F172A" />
 
             <TextView
                 android:id="@+id/tv_label"
@@ -68,9 +67,10 @@
                 android:text="REMAINING TIME"
                 android:textSize="12sp"
                 android:textStyle="bold"
-                android:letterSpacing="0.1"
-                android:textColor="#94A3B8"
-                android:layout_marginTop="8dp" />
+                android:letterSpacing="0.15"
+                android:textColor="#64748B"
+                android:layout_marginTop="12dp"
+                android:gravity="center" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 

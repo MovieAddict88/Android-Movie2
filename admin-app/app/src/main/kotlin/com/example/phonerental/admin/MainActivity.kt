@@ -122,10 +122,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateAdapter(devices: List<Device>) {
         binding.rvDevices.adapter = DeviceAdapter(devices) { device, command ->
-            if (command == "hide_app" || command == "show_app") {
-                showAppCommandDialog(device.device_id)
-            } else {
-                sendCommand(device.device_id, command)
+            when (command) {
+                "hide_app", "show_app" -> showAppCommandDialog(device.device_id)
+                "message" -> showMessageDialog(device.device_id)
+                else -> sendCommand(device.device_id, command)
             }
         }
     }
@@ -146,6 +146,8 @@ class MainActivity : AppCompatActivity() {
         val input = EditText(this)
         input.hint = "Package Name (e.g. com.example.app)"
         input.inputType = InputType.TYPE_CLASS_TEXT
+        val padding = (16 * resources.displayMetrics.density).toInt()
+        input.setPadding(padding, padding, padding, padding)
 
         MaterialAlertDialogBuilder(this)
             .setTitle("Application Control")
@@ -160,6 +162,25 @@ class MainActivity : AppCompatActivity() {
                 if (packageName.isNotEmpty()) sendCommand(deviceId, "show_app", packageName)
             }
             .setNeutralButton("Cancel", null)
+            .show()
+    }
+
+    private fun showMessageDialog(deviceId: String) {
+        val input = EditText(this)
+        input.hint = "Enter message..."
+        input.inputType = InputType.TYPE_CLASS_TEXT
+        val padding = (16 * resources.displayMetrics.density).toInt()
+        input.setPadding(padding, padding, padding, padding)
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Send Message")
+            .setMessage("The message will be displayed as a dialog on the user's phone.")
+            .setView(input)
+            .setPositiveButton("Send") { _, _ ->
+                val message = input.text.toString()
+                if (message.isNotEmpty()) sendCommand(deviceId, "message", message)
+            }
+            .setNegativeButton("Cancel", null)
             .show()
     }
 
@@ -191,9 +212,9 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Exception) { false }
 
             if (isOnline) {
-                holder.binding.tvDeviceName.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.presence_online, 0, 0, 0)
+                holder.binding.ivStatusDot.setImageResource(android.R.drawable.presence_online)
             } else {
-                holder.binding.tvDeviceName.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.presence_invisible, 0, 0, 0)
+                holder.binding.ivStatusDot.setImageResource(android.R.drawable.presence_invisible)
             }
 
             if (device.is_locked) {
@@ -206,6 +227,7 @@ class MainActivity : AppCompatActivity() {
 
             holder.binding.btnLock.setOnClickListener { onAction(device, "lock") }
             holder.binding.btnUnlock.setOnClickListener { onAction(device, "unlock") }
+            holder.binding.btnMessage.setOnClickListener { onAction(device, "message") }
             holder.binding.btnApps.setOnClickListener { onAction(device, "hide_app") } // Action trigger
         }
 
