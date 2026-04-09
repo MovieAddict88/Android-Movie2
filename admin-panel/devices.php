@@ -85,16 +85,7 @@ $devices = $pdo->query("SELECT * FROM devices ORDER BY last_seen DESC")->fetchAl
     </style>
 </head>
 <body>
-    <aside class="sidebar">
-        <h1>Rental Admin</h1>
-        <nav>
-            <ul>
-                <li><a href="index.php">Dashboard</a></li>
-                <li><a href="devices.php" class="active">Devices</a></li>
-                <li><a href="logout.php">Logout</a></li>
-            </ul>
-        </nav>
-    </aside>
+    <?php include 'includes/sidebar.php'; ?>
 
     <div class="main-wrapper">
         <header>
@@ -134,8 +125,11 @@ $devices = $pdo->query("SELECT * FROM devices ORDER BY last_seen DESC")->fetchAl
             </div>
 
             <div class="card">
-                <h2>Device List</h2>
-                <table>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h2>Device List</h2>
+                    <input type="text" id="deviceSearch" placeholder="Search devices..." class="input-text" style="max-width: 300px;">
+                </div>
+                <table id="devicesTable">
                     <thead>
                         <tr>
                             <th>Device ID</th>
@@ -218,6 +212,16 @@ $devices = $pdo->query("SELECT * FROM devices ORDER BY last_seen DESC")->fetchAl
     </div>
 
     <script>
+        document.getElementById('deviceSearch').addEventListener('keyup', function() {
+            const query = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#devicesTable tbody tr');
+
+            rows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                row.style.display = text.includes(query) ? '' : 'none';
+            });
+        });
+
         function openAppControl(deviceId) {
             document.getElementById('modalDeviceId').value = deviceId;
             document.getElementById('modalTitle').innerText = 'App Control: ' + deviceId;

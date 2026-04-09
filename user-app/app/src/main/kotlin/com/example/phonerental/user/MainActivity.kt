@@ -45,6 +45,17 @@ class MainActivity : AppCompatActivity() {
             startActivityForResult(intent, 1)
         }
 
+        binding.btnSupport.setOnClickListener {
+            try {
+                val intent = Intent(Intent.ACTION_DIAL)
+                // In a real app, this would be a configured support number
+                intent.data = android.net.Uri.parse("tel:1234567890")
+                startActivity(intent)
+            } catch (e: Exception) {
+                Toast.makeText(this, "Unable to make a call. Please contact support via other means.", Toast.LENGTH_LONG).show()
+            }
+        }
+
         startService(Intent(this, BeaconService::class.java))
         updateUI()
     }
@@ -132,6 +143,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showLockedOverlay() {
         binding.btnAdmin.visibility = View.GONE
+        binding.btnSupport.visibility = View.VISIBLE
         // Add a support message
         binding.tvLabel.text = "DEVICE LOCKED\nPlease contact support to renew your rental."
         binding.tvLabel.setTextColor(Color.parseColor("#ef4444"))
@@ -139,7 +151,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun hideLockedOverlay() {
-        binding.root.setBackgroundColor(Color.parseColor("#F1F5F9"))
+        binding.btnSupport.visibility = View.GONE
+        binding.root.setBackgroundColor(Color.parseColor("#F8FAFC"))
     }
 
     private fun startTimer(duration: Long) {

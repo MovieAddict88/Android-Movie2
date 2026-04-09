@@ -38,6 +38,7 @@ try {
     } else {
         // If device is not in system, maybe auto-register with default values?
         // For now, return error
+        header('HTTP/1.1 404 Not Found');
         echo json_encode(['status' => 'error', 'message' => 'Device not found']);
     }
 } catch (PDOException $e) {
