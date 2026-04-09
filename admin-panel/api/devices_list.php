@@ -13,7 +13,7 @@ if (!isset($pdo)) {
 }
 
 try {
-    $devices = $pdo->query("SELECT id, device_id, model, owner_name, is_locked, last_seen FROM devices")->fetchAll();
+    $devices = $pdo->query("SELECT id, device_id, model, owner_name, is_locked, last_seen, ip_address, rental_end_time FROM devices")->fetchAll();
     echo json_encode($devices);
 } catch (PDOException $e) {
     echo json_encode(['status' => 'error', 'message' => 'Database error: ' . $e->getMessage()]);

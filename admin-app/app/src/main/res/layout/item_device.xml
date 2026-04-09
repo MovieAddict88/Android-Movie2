@@ -42,6 +42,24 @@
             android:textColor="#94a3b8"
             android:layout_marginTop="4dp"/>
 
+        <TextView
+            android:id="@+id/tv_ip_address"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="IP: 192.168.1.1"
+            android:textSize="12sp"
+            android:textColor="#94a3b8" />
+
+        <TextView
+            android:id="@+id/tv_rental_end"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ends: 2023-12-31"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#64748b"
+            android:layout_marginTop="2dp"/>
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

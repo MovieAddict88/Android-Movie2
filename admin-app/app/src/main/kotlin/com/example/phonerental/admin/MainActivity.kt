@@ -20,7 +20,16 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.*
 
-data class Device(val id: Int, val device_id: String, val model: String?, val owner_name: String?, val is_locked: Boolean, val last_seen: String?)
+data class Device(
+    val id: Int,
+    val device_id: String,
+    val model: String?,
+    val owner_name: String?,
+    val is_locked: Boolean,
+    val last_seen: String?,
+    val ip_address: String?,
+    val rental_end_time: String?
+)
 data class GenericResponse(val status: String, val message: String)
 
 class ApiKeyInterceptor(private val apiKey: String) : Interceptor {
@@ -140,7 +149,9 @@ class MainActivity : AppCompatActivity() {
             val device = devices[position]
             holder.binding.tvDeviceName.text = device.model ?: device.device_id
             holder.binding.tvOwner.text = "Owner: ${device.owner_name ?: "Unknown"}"
-            holder.binding.tvLast_seen.text = "Last seen: ${device.last_seen ?: "Never"}"
+            holder.binding.tvLastSeen.text = "Last seen: ${device.last_seen ?: "Never"}"
+            holder.binding.tvIpAddress.text = "IP: ${device.ip_address ?: "Unknown"}"
+            holder.binding.tvRentalEnd.text = "Ends: ${device.rental_end_time ?: "Not set"}"
 
             if (device.is_locked) {
                 holder.binding.btnLock.isEnabled = false
