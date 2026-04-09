@@ -1,0 +1,43 @@
+[Thu Apr  9 10:34:49 2026] PHP 8.3.6 Development Server (http://localhost:8080) started
+[Thu Apr  9 10:35:59 2026] [::1]:35094 Accepted
+[Thu Apr  9 10:35:59 2026] PHP Fatal error:  Uncaught Error: Call to undefined function get_csrf_token() in /app/admin-panel/login.php:45
+Stack trace:
+#0 {main}
+  thrown in /app/admin-panel/login.php on line 45
+[Thu Apr  9 10:35:59 2026] [::1]:35094 [500]: GET /login.php - Uncaught Error: Call to undefined function get_csrf_token() in /app/admin-panel/login.php:45
+Stack trace:
+#0 {main}
+  thrown in /app/admin-panel/login.php on line 45
+[Thu Apr  9 10:35:59 2026] [::1]:35094 Closing
+[Thu Apr  9 10:35:59 2026] [::1]:35104 Accepted
+[Thu Apr  9 10:35:59 2026] [::1]:35104 [200]: GET /css/style.css
+[Thu Apr  9 10:35:59 2026] [::1]:35104 Closing
+[Thu Apr  9 10:36:01 2026] [::1]:36994 Accepted
+[Thu Apr  9 10:36:01 2026] [::1]:36994 [302]: GET /devices.php
+[Thu Apr  9 10:36:01 2026] [::1]:36994 Closing
+[Thu Apr  9 10:36:01 2026] [::1]:37006 Accepted
+[Thu Apr  9 10:36:01 2026] PHP Fatal error:  Uncaught Error: Call to undefined function get_csrf_token() in /app/admin-panel/login.php:45
+Stack trace:
+#0 {main}
+  thrown in /app/admin-panel/login.php on line 45
+[Thu Apr  9 10:36:01 2026] [::1]:37006 [500]: GET /login.php - Uncaught Error: Call to undefined function get_csrf_token() in /app/admin-panel/login.php:45
+Stack trace:
+#0 {main}
+  thrown in /app/admin-panel/login.php on line 45
+[Thu Apr  9 10:36:01 2026] [::1]:37006 Closing
+[Thu Apr  9 10:36:01 2026] [::1]:37018 Accepted
+[Thu Apr  9 10:36:01 2026] [::1]:37018 [200]: GET /css/style.css
+[Thu Apr  9 10:36:01 2026] [::1]:37018 Closing
+[Thu Apr  9 10:36:02 2026] [::1]:37020 Accepted
+[Thu Apr  9 10:36:02 2026] PHP Fatal error:  Uncaught Error: Call to undefined function get_csrf_token() in /app/admin-panel/login.php:45
+Stack trace:
+#0 {main}
+  thrown in /app/admin-panel/login.php on line 45
+[Thu Apr  9 10:36:02 2026] [::1]:37020 [500]: GET /login.php - Uncaught Error: Call to undefined function get_csrf_token() in /app/admin-panel/login.php:45
+Stack trace:
+#0 {main}
+  thrown in /app/admin-panel/login.php on line 45
+[Thu Apr  9 10:36:02 2026] [::1]:37020 Closing
+[Thu Apr  9 10:36:02 2026] [::1]:37026 Accepted
+[Thu Apr  9 10:36:02 2026] [::1]:37026 [200]: GET /css/style.css
+[Thu Apr  9 10:36:02 2026] [::1]:37026 Closing

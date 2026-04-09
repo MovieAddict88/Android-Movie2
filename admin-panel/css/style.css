@@ -265,7 +265,7 @@ th {
     background: #e2e8f0;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
     table, thead, tbody, th, td, tr {
         display: block;
     }
@@ -274,28 +274,51 @@ th {
         top: -9999px;
         left: -9999px;
     }
-    tr { border: 1px solid var(--border-color); margin-bottom: 1rem; border-radius: 0.5rem; }
+    tr { border: 1px solid var(--border-color); margin-bottom: 1rem; border-radius: 0.5rem; background: var(--card-bg); }
     td {
         border: none;
-        border-bottom: 1px solid #eee;
+        border-bottom: 1px solid #f1f5f9;
         position: relative;
-        padding-left: 45%;
+        padding-left: 50%;
+        min-height: 2.5rem;
+        display: flex;
+        align-items: center;
     }
+    td:last-child { border-bottom: none; }
     td:before {
         position: absolute;
-        top: 1rem;
         left: 1rem;
-        width: 40%;
+        width: 45%;
         padding-right: 10px;
         white-space: nowrap;
-        font-weight: bold;
+        font-weight: 600;
         color: var(--text-muted);
+        font-size: 0.75rem;
+        text-transform: uppercase;
     }
-    td:nth-of-type(1):before { content: "Device ID"; }
-    td:nth-of-type(2):before { content: "Model"; }
-    td:nth-of-type(3):before { content: "Owner"; }
-    td:nth-of-type(4):before { content: "IP Address"; }
-    td:nth-of-type(5):before { content: "Status"; }
-    td:nth-of-type(6):before { content: "Last Seen"; }
-    td:nth-of-type(7):before { content: "Actions"; }
+
+    /* Devices Table Specific */
+    #devicesTable td:nth-of-type(1):before { content: "Device ID"; }
+    #devicesTable td:nth-of-type(2):before { content: "Model"; }
+    #devicesTable td:nth-of-type(3):before { content: "Owner"; }
+    #devicesTable td:nth-of-type(4):before { content: "IP / Battery"; }
+    #devicesTable td:nth-of-type(5):before { content: "Status"; }
+    #devicesTable td:nth-of-type(6):before { content: "Last Seen"; }
+    #devicesTable td:nth-of-type(7):before { content: "Actions"; }
+
+    /* Dashboard Table Specific */
+    .main-wrapper main table:not(#devicesTable) td:nth-of-type(1):before { content: "Device ID"; }
+    .main-wrapper main table:not(#devicesTable) td:nth-of-type(2):before { content: "Model"; }
+    .main-wrapper main table:not(#devicesTable) td:nth-of-type(3):before { content: "Owner"; }
+    .main-wrapper main table:not(#devicesTable) td:nth-of-type(4):before { content: "Battery"; }
+    .main-wrapper main table:not(#devicesTable) td:nth-of-type(5):before { content: "Status"; }
+    .main-wrapper main table:not(#devicesTable) td:nth-of-type(6):before { content: "Last Seen"; }
+}
+
+@media (max-width: 480px) {
+    .form-inline {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .btn { width: 100%; }
 }

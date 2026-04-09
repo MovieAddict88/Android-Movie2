@@ -73,6 +73,7 @@ $devices = $pdo->query("SELECT * FROM devices ORDER BY last_seen DESC LIMIT 10")
                             <th>Device ID</th>
                             <th>Model</th>
                             <th>Owner</th>
+                            <th>Battery</th>
                             <th>Status</th>
                             <th>Last Seen</th>
                         </tr>
@@ -90,6 +91,19 @@ $devices = $pdo->query("SELECT * FROM devices ORDER BY last_seen DESC LIMIT 10")
                                 <?php echo htmlspecialchars($device['model']); ?>
                             </td>
                             <td><?php echo htmlspecialchars($device['owner_name']); ?></td>
+                            <td>
+                                <?php if (isset($device['battery_level'])): ?>
+                                    <div style="display: flex; align-items: center; gap: 4px;">
+                                        <div style="width: 24px; height: 12px; border: 1px solid #64748b; border-radius: 2px; position: relative; padding: 1px;">
+                                            <div style="width: <?php echo $device['battery_level']; ?>%; height: 100%; background: <?php echo $device['battery_level'] > 20 ? 'var(--success)' : 'var(--danger)'; ?>;"></div>
+                                            <div style="position: absolute; right: -3px; top: 3px; width: 2px; height: 4px; background: #64748b;"></div>
+                                        </div>
+                                        <small><?php echo $device['battery_level']; ?>%<?php echo $device['is_charging'] ? ' ⚡' : ''; ?></small>
+                                    </div>
+                                <?php else: ?>
+                                    -
+                                <?php endif; ?>
+                            </td>
                             <td>
                                 <span class="status-badge <?php echo $device['is_locked'] ? 'status-inactive' : 'status-active'; ?>">
                                     <?php echo $device['is_locked'] ? 'LOCKED' : 'ACTIVE'; ?>

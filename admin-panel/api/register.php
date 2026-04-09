@@ -16,6 +16,17 @@ $model = $input['model'] ?? 'Unknown';
 // Security check
 validate_api_key();
 
+// Validation
+if (!preg_match('/^[a-zA-Z0-9_\-]+$/', $device_id)) {
+    echo json_encode(['status' => 'error', 'message' => 'Invalid Device ID format']);
+    exit;
+}
+
+if (strlen($device_id) > 100 || strlen($model) > 100) {
+    echo json_encode(['status' => 'error', 'message' => 'Input too long']);
+    exit;
+}
+
 $stmt = $pdo->prepare("INSERT INTO devices (device_id, model) VALUES (?, ?) ON DUPLICATE KEY UPDATE model = ?");
 if ($stmt->execute([$device_id, $model, $model])) {
     echo json_encode(['status' => 'success', 'message' => 'Device registered']);

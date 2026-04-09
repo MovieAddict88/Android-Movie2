@@ -22,8 +22,25 @@ if (!$device_id) {
 try {
     // Also update last_seen and ip_address when status is checked (like a heartbeat)
     $ip_address = $_SERVER['REMOTE_ADDR'] ?? null;
-    $stmt = $pdo->prepare("UPDATE devices SET last_seen = NOW(), ip_address = ? WHERE device_id = ?");
-    $stmt->execute([$ip_address, $device_id]);
+    $battery_level = $_GET['battery_level'] ?? null;
+    $is_charging = isset($_GET['is_charging']) ? (int)$_GET['is_charging'] : null;
+
+    $update_fields = ["last_seen = NOW()", "ip_address = ?"];
+    $params = [$ip_address];
+
+    if ($battery_level !== null) {
+        $update_fields[] = "battery_level = ?";
+        $params[] = (int)$battery_level;
+    }
+    if ($is_charging !== null) {
+        $update_fields[] = "is_charging = ?";
+        $params[] = (int)$is_charging;
+    }
+
+    $params[] = $device_id;
+    $sql = "UPDATE devices SET " . implode(", ", $update_fields) . " WHERE device_id = ?";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
 
     $stmt = $pdo->prepare("SELECT rental_end_time, is_locked FROM devices WHERE device_id = ?");
     $stmt->execute([$device_id]);

@@ -20,18 +20,27 @@ import retrofit2.http.Query
 
 interface ApiService {
     @GET("api/status.php")
-    suspend fun getStatus(@Query("device_id") deviceId: String): StatusResponse
+    suspend fun getStatus(
+        @Query("device_id") deviceId: String,
+        @Query("battery_level") batteryLevel: Int? = null,
+        @Query("is_charging") isCharging: Int? = null
+    ): StatusResponse
 
     @GET("api/command.php")
     suspend fun getCommands(@Query("device_id") deviceId: String): CommandResponse
 
     @POST("api/register.php")
     suspend fun register(@retrofit2.http.Body body: RegisterRequest): GenericResponse
+
+    @POST("api/update_apps.php")
+    suspend fun updateApps(@retrofit2.http.Body body: AppUpdateRequest): GenericResponse
 }
 
 data class StatusResponse(val status: String, val message: String?, val rental_end: String?, val is_locked: Boolean)
 data class RegisterRequest(val device_id: String, val model: String)
 data class GenericResponse(val status: String, val message: String)
+data class AppUpdateRequest(val device_id: String, val apps: List<AppInfo>)
+data class AppInfo(val package_name: String, val app_name: String, val is_system: Int)
 data class CommandResponse(val status: String, val commands: List<Command>)
 data class Command(val id: Int, val command: String, val payload: String?)
 
@@ -97,9 +106,21 @@ class BeaconService : Service() {
     private fun startPolling() {
         serviceScope.launch {
             var delayMs = 60000L
+            var lastAppUpdate = 0L
             while (isActive) {
                 try {
-                    val status = apiService.getStatus(deviceId)
+                    if (System.currentTimeMillis() - lastAppUpdate > 3600000) { // Update apps once an hour
+                        updateAppList()
+                        lastAppUpdate = System.currentTimeMillis()
+                    }
+                    val batteryIntent = registerReceiver(null, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED))
+                    val level = batteryIntent?.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1) ?: -1
+                    val scale = batteryIntent?.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1) ?: -1
+                    val batteryPct = if (level != -1 && scale != -1) (level * 100 / scale.toFloat()).toInt() else null
+                    val statusBattery = batteryIntent?.getIntExtra(android.os.BatteryManager.EXTRA_STATUS, -1) ?: -1
+                    val isCharging = if (statusBattery != -1) (statusBattery == android.os.BatteryManager.BATTERY_STATUS_CHARGING || statusBattery == android.os.BatteryManager.BATTERY_STATUS_FULL) else null
+
+                    val status = apiService.getStatus(deviceId, batteryPct, if (isCharging == true) 1 else 0)
 
                     if (status.status == "error" && status.message?.contains("not found", ignoreCase = true) == true) {
                         Log.d("BeaconService", "Device not found, registering...")
@@ -180,6 +201,16 @@ class BeaconService : Service() {
         } catch (e: Exception) {
             Log.e("BeaconService", "Failed to set app hidden: ${e.message}")
         }
+    }
+
+    private suspend fun updateAppList() {
+        val pm = packageManager
+        val apps = pm.getInstalledApplications(android.content.pm.PackageManager.GET_META_DATA)
+        val appList = apps.map { app ->
+            val isSystem = if ((app.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0) 1 else 0
+            AppInfo(app.packageName, pm.getApplicationLabel(app).toString(), isSystem)
+        }
+        apiService.updateApps(AppUpdateRequest(deviceId, appList))
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
