@@ -65,11 +65,29 @@ define('DB_NAME', '$dbname');
 define('DB_USER', '$user');
 define('DB_PASS', '$pass');
 
+// Security Configuration
+define('API_KEY', '" . bin2hex(random_bytes(16)) . "');
+
 try {
     \$pdo = new PDO(\"mysql:host=\" . DB_HOST . \";dbname=\" . DB_NAME, DB_USER, DB_PASS);
     \$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    \$pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 } catch (PDOException \$e) {
-    die(\"Connection failed: \" . \$e->getMessage());
+    // Connection failed
+}
+
+/**
+ * Validates the API Key from the X-API-Key header
+ */
+function validate_api_key() {
+    \$headers = getallheaders();
+    \$provided_key = \$headers['X-API-Key'] ?? \$_SERVER['HTTP_X_API_KEY'] ?? null;
+
+    if (\$provided_key !== API_KEY) {
+        header('HTTP/1.1 401 Unauthorized');
+        echo json_encode(['status' => 'error', 'message' => 'Unauthorized: Invalid or missing API Key']);
+        exit;
+    }
 }
 ?>";
         file_put_contents($config_file, $config_content);

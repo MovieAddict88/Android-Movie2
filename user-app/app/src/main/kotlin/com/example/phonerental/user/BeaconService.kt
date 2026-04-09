@@ -1,6 +1,8 @@
 package com.example.phonerental.user
 
 import android.app.*
+import android.app.admin.DevicePolicyManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
@@ -8,6 +10,9 @@ import android.provider.Settings
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.*
+import okhttp3.Interceptor
+import okhttp3.OkHttpClient
+import okhttp3.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
@@ -21,22 +26,44 @@ interface ApiService {
     suspend fun getCommands(@Query("device_id") deviceId: String): CommandResponse
 }
 
-data class StatusResponse(val rental_end: String?, val is_locked: Boolean)
-data class CommandResponse(val commands: List<Command>)
+data class StatusResponse(val status: String, val rental_end: String?, val is_locked: Boolean)
+data class CommandResponse(val status: String, val commands: List<Command>)
 data class Command(val id: Int, val command: String, val payload: String?)
+
+class ApiKeyInterceptor(private val apiKey: String) : Interceptor {
+    override fun intercept(chain: Interceptor.Chain): Response {
+        val request = chain.request().newBuilder()
+            .addHeader("X-API-Key", apiKey)
+            .build()
+        return chain.proceed(request)
+    }
+}
 
 class BeaconService : Service() {
     private val serviceJob = Job()
     private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
     private lateinit var apiService: ApiService
     private lateinit var deviceId: String
+    private lateinit var devicePolicyManager: DevicePolicyManager
+    private lateinit var adminComponent: ComponentName
+
+    companion object {
+        const val ACTION_REFRESH_UI = "com.example.phonerental.user.REFRESH_UI"
+    }
 
     override fun onCreate() {
         super.onCreate()
         deviceId = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID)
+        devicePolicyManager = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        adminComponent = ComponentName(this, DeviceAdminReceiver::class.java)
+
+        val client = OkHttpClient.Builder()
+            .addInterceptor(ApiKeyInterceptor("your_secure_api_key_here_123")) // Same key as PHP
+            .build()
 
         val retrofit = Retrofit.Builder()
             .baseUrl("http://your-admin-panel-url.com/") // Replace with actual URL
+            .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
         apiService = retrofit.create(ApiService::class.java)
@@ -80,26 +107,59 @@ class BeaconService : Service() {
     }
 
     private fun handleStatus(status: StatusResponse) {
-        // Update local preferences or notify MainActivity
         val prefs = getSharedPreferences("rental_prefs", Context.MODE_PRIVATE)
+        val wasLocked = prefs.getBoolean("is_locked", false)
+
         prefs.edit().apply {
             putString("rental_end", status.rental_end)
             putBoolean("is_locked", status.is_locked)
             apply()
+        }
+
+        if (wasLocked != status.is_locked) {
+            sendBroadcast(Intent(ACTION_REFRESH_UI))
         }
     }
 
     private fun handleCommand(command: Command) {
         when (command.command) {
             "lock" -> {
-                val intent = Intent(this, MainActivity::class.java)
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                intent.putExtra("ACTION", "LOCK")
-                startActivity(intent)
+                updateLockState(true)
             }
             "unlock" -> {
-                 // logic to unlock
+                updateLockState(false)
             }
+            "hide_app" -> {
+                command.payload?.let { setAppHidden(it, true) }
+            }
+            "show_app" -> {
+                command.payload?.let { setAppHidden(it, false) }
+            }
+        }
+    }
+
+    private fun updateLockState(locked: Boolean) {
+        val prefs = getSharedPreferences("rental_prefs", Context.MODE_PRIVATE)
+        prefs.edit().putBoolean("is_locked", locked).apply()
+
+        if (locked) {
+            val intent = Intent(this, MainActivity::class.java)
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            intent.putExtra("ACTION", "LOCK")
+            startActivity(intent)
+        } else {
+            sendBroadcast(Intent(ACTION_REFRESH_UI))
+        }
+    }
+
+    private fun setAppHidden(packageName: String, hidden: Boolean) {
+        try {
+            if (devicePolicyManager.isDeviceOwnerApp(packageName)) return
+
+            val success = devicePolicyManager.setApplicationHidden(adminComponent, packageName, hidden)
+            Log.d("BeaconService", "Setting $packageName hidden=$hidden success=$success")
+        } catch (e: Exception) {
+            Log.e("BeaconService", "Failed to set app hidden: ${e.message}")
         }
     }
 
