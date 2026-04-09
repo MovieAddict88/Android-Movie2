@@ -79,24 +79,30 @@ class MainActivity : AppCompatActivity() {
             exitKioskMode()
         }
 
-        if (endTimeStr != null) {
+        if (!endTimeStr.isNullOrEmpty()) {
             try {
                 val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
                 val endDate = sdf.parse(endTimeStr)
-                val currentTime = System.currentTimeMillis()
-                val diff = endDate.time - currentTime
+                if (endDate != null) {
+                    val currentTime = System.currentTimeMillis()
+                    val diff = endDate.time - currentTime
 
-                if (diff > 0) {
-                    startTimer(diff)
+                    if (diff > 0) {
+                        startTimer(diff)
+                    } else {
+                        binding.tvTimer.text = "EXPIRED"
+                        binding.tvStatus.text = "EXPIRED"
+                        binding.tvStatus.setTextColor(Color.parseColor("#f43f5e"))
+                        enterKioskMode()
+                    }
                 } else {
-                    binding.tvTimer.text = "EXPIRED"
-                    binding.tvStatus.text = "EXPIRED"
-                    binding.tvStatus.setTextColor(Color.parseColor("#ef4444"))
-                    enterKioskMode()
+                    binding.tvTimer.text = "--:--:--"
                 }
             } catch (e: Exception) {
                 binding.tvTimer.text = "--:--:--"
             }
+        } else {
+            binding.tvTimer.text = "NOT SET"
         }
 
         if (devicePolicyManager.isAdminActive(adminComponent)) {
