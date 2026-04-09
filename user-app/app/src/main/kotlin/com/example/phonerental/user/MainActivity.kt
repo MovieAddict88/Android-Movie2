@@ -101,6 +101,15 @@ class MainActivity : AppCompatActivity() {
 
         if (devicePolicyManager.isAdminActive(adminComponent)) {
             binding.btnAdmin.visibility = View.GONE
+
+            // Check if Device Owner (required for hiding apps)
+            if (!devicePolicyManager.isDeviceOwnerApp(packageName)) {
+                binding.tvLabel.text = "REMAINING TIME\n(Warning: Not Device Owner)"
+                binding.tvLabel.setTextColor(Color.parseColor("#f59e0b"))
+            } else {
+                binding.tvLabel.text = "REMAINING TIME"
+                binding.tvLabel.setTextColor(Color.parseColor("#64748b"))
+            }
         } else {
             binding.btnAdmin.visibility = View.VISIBLE
         }

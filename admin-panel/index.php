@@ -68,8 +68,12 @@ function time_elapsed_string($datetime, $full = false) {
     <div class="main-wrapper">
         <header>
             <div class="container header-content">
-                <h2 style="margin-bottom: 0;">Dashboard Overview</h2>
-                <div class="user-info">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <button class="sidebar-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+                    <h2 style="margin-bottom: 0;">Dashboard Overview</h2>
+                </div>
+                <div class="user-info" style="display: flex; gap: 1rem; align-items: center;">
+                    <button onclick="location.reload()" class="btn refresh-btn">Refresh</button>
                     <span>Admin</span>
                 </div>
             </div>

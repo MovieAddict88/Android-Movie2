@@ -106,7 +106,11 @@ function time_elapsed_string($datetime, $full = false) {
     <div class="main-wrapper">
         <header>
             <div class="container header-content">
-                <h2 style="margin-bottom: 0;">Device Management</h2>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <button class="sidebar-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+                    <h2 style="margin-bottom: 0;">Device Management</h2>
+                </div>
+                <button onclick="location.reload()" class="btn refresh-btn">Refresh</button>
             </div>
         </header>
 
@@ -144,7 +148,7 @@ function time_elapsed_string($datetime, $full = false) {
                             <th>Device ID</th>
                             <th>Model</th>
                             <th>Owner</th>
-                            <th>Rental Ends</th>
+                            <th>IP Address</th>
                             <th>Status</th>
                             <th>Last Seen</th>
                             <th>Actions</th>
@@ -156,7 +160,7 @@ function time_elapsed_string($datetime, $full = false) {
                             <td><code><?php echo htmlspecialchars($device['device_id']); ?></code></td>
                             <td><?php echo htmlspecialchars($device['model']); ?></td>
                             <td><?php echo htmlspecialchars($device['owner_name']); ?></td>
-                            <td><?php echo $device['rental_end_time'] ?: 'N/A'; ?></td>
+                            <td><small><?php echo htmlspecialchars($device['ip_address'] ?? 'Unknown'); ?></small></td>
                             <td>
                                 <span class="status-badge <?php echo $device['is_locked'] ? 'status-inactive' : 'status-active'; ?>">
                                     <?php echo $device['is_locked'] ? 'LOCKED' : 'ACTIVE'; ?>
