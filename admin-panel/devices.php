@@ -60,6 +60,14 @@ if (isset($_GET['unlock'])) {
     exit;
 }
 
+if (isset($_GET['delete'])) {
+    $id = (int)$_GET['delete'];
+    $stmt = $pdo->prepare("DELETE FROM devices WHERE id = ?");
+    $stmt->execute([$id]);
+    header("Location: devices.php");
+    exit;
+}
+
 $devices = $pdo->query("SELECT * FROM devices ORDER BY last_seen DESC")->fetchAll();
 ?>
 <!DOCTYPE html>
@@ -143,7 +151,14 @@ $devices = $pdo->query("SELECT * FROM devices ORDER BY last_seen DESC")->fetchAl
                         <?php foreach ($devices as $device): ?>
                         <tr>
                             <td><code><?php echo htmlspecialchars($device['device_id']); ?></code></td>
-                            <td><?php echo htmlspecialchars($device['model']); ?></td>
+                            <td>
+                                <?php if (is_online($device['last_seen'])): ?>
+                                    <span style="display: inline-block; width: 10px; height: 10px; background: var(--success); border-radius: 50%; margin-right: 5px;" title="Online"></span>
+                                <?php else: ?>
+                                    <span style="display: inline-block; width: 10px; height: 10px; background: #cbd5e1; border-radius: 50%; margin-right: 5px;" title="Offline"></span>
+                                <?php endif; ?>
+                                <?php echo htmlspecialchars($device['model']); ?>
+                            </td>
                             <td><?php echo htmlspecialchars($device['owner_name']); ?></td>
                             <td><small><?php echo htmlspecialchars($device['ip_address'] ?? 'Unknown'); ?></small></td>
                             <td>
@@ -160,6 +175,7 @@ $devices = $pdo->query("SELECT * FROM devices ORDER BY last_seen DESC")->fetchAl
                                         <a href="?lock=<?php echo $device['id']; ?>" class="btn btn-danger btn-sm">Lock</a>
                                     <?php endif; ?>
                                     <button onclick="openAppControl('<?php echo $device['device_id']; ?>')" class="btn btn-primary btn-sm" style="background: var(--warning);">Apps</button>
+                                    <a href="?delete=<?php echo $device['id']; ?>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this device?')">Delete</a>
                                 </div>
                             </td>
                         </tr>
@@ -172,13 +188,19 @@ $devices = $pdo->query("SELECT * FROM devices ORDER BY last_seen DESC")->fetchAl
 
     <!-- App Control Modal (Simulated for brevity) -->
     <div id="appModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:2000; justify-content:center; align-items:center;">
-        <div class="card" style="width: 400px; margin-bottom: 0;">
+        <div class="card modal-content" style="width: 400px; margin-bottom: 0;">
             <h2 id="modalTitle">App Control</h2>
             <form method="post">
                 <input type="hidden" name="target_device_id" id="modalDeviceId">
                 <div class="form-group" style="margin-bottom: 1rem;">
                     <label>Package Name</label>
-                    <input type="text" name="package_name" class="input-text" required placeholder="com.example.app">
+                    <input type="text" name="package_name" id="packageNameInput" class="input-text" required placeholder="com.example.app">
+                    <div class="suggestions">
+                        <span class="suggestion-tag" onclick="setPackage('com.android.chrome')">Chrome</span>
+                        <span class="suggestion-tag" onclick="setPackage('com.google.android.youtube')">YouTube</span>
+                        <span class="suggestion-tag" onclick="setPackage('com.facebook.katana')">Facebook</span>
+                        <span class="suggestion-tag" onclick="setPackage('com.whatsapp')">WhatsApp</span>
+                    </div>
                 </div>
                 <div class="form-group" style="margin-bottom: 1.5rem;">
                     <label>Action</label>
@@ -203,6 +225,9 @@ $devices = $pdo->query("SELECT * FROM devices ORDER BY last_seen DESC")->fetchAl
         }
         function closeAppControl() {
             document.getElementById('appModal').style.display = 'none';
+        }
+        function setPackage(pkg) {
+            document.getElementById('packageNameInput').value = pkg;
         }
     </script>
 </body>

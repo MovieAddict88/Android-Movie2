@@ -85,7 +85,14 @@ $devices = $pdo->query("SELECT * FROM devices ORDER BY last_seen DESC LIMIT 10")
                         <?php foreach ($devices as $device): ?>
                         <tr>
                             <td><code><?php echo htmlspecialchars($device['device_id']); ?></code></td>
-                            <td><?php echo htmlspecialchars($device['model']); ?></td>
+                            <td>
+                                <?php if (is_online($device['last_seen'])): ?>
+                                    <span style="display: inline-block; width: 10px; height: 10px; background: var(--success); border-radius: 50%; margin-right: 5px;" title="Online"></span>
+                                <?php else: ?>
+                                    <span style="display: inline-block; width: 10px; height: 10px; background: #cbd5e1; border-radius: 50%; margin-right: 5px;" title="Offline"></span>
+                                <?php endif; ?>
+                                <?php echo htmlspecialchars($device['model']); ?>
+                            </td>
                             <td><?php echo htmlspecialchars($device['owner_name']); ?></td>
                             <td>
                                 <span class="status-badge <?php echo $device['is_locked'] ? 'status-inactive' : 'status-active'; ?>">

@@ -45,3 +45,24 @@ function time_elapsed_string($datetime, $full = false) {
     if (!$full) $string = array_slice($string, 0, 1);
     return $string ? implode(', ', $string) . ' ago' : 'just now';
 }
+
+/**
+ * Checks if a device is online based on its last_seen timestamp.
+ *
+ * @param string|null $last_seen
+ * @param int $minutes Threshold in minutes (default 5)
+ * @return bool
+ */
+function is_online($last_seen, $minutes = 5) {
+    if ($last_seen == null) return false;
+
+    try {
+        $last_seen_time = new DateTime($last_seen);
+        $now = new DateTime();
+        $interval = $now->getTimestamp() - $last_seen_time->getTimestamp();
+
+        return $interval <= ($minutes * 60);
+    } catch (Exception $e) {
+        return false;
+    }
+}

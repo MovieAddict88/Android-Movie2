@@ -1,5 +1,6 @@
 package com.example.phonerental.admin
 
+import android.graphics.Color
 import android.os.Bundle
 import android.text.InputType
 import android.view.LayoutInflater
@@ -58,6 +59,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var apiService: AdminApiService
     private val scope = CoroutineScope(Dispatchers.Main + Job())
+    private var allDevices: List<Device> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -79,6 +81,15 @@ class MainActivity : AppCompatActivity() {
         binding.swipeRefresh.setOnRefreshListener {
             refreshDevices()
         }
+
+        binding.searchView.setOnQueryTextListener(object : androidx.appcompat.widget.SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean = false
+            override fun onQueryTextChange(newText: String?): Boolean {
+                filterDevices(newText)
+                return true
+            }
+        })
+
         refreshDevices()
     }
 
@@ -86,18 +97,35 @@ class MainActivity : AppCompatActivity() {
         binding.swipeRefresh.isRefreshing = true
         scope.launch {
             try {
-                val devices = withContext(Dispatchers.IO) { apiService.getDevices() }
-                binding.rvDevices.adapter = DeviceAdapter(devices) { device, command ->
-                    if (command == "hide_app" || command == "show_app") {
-                        showAppCommandDialog(device.device_id)
-                    } else {
-                        sendCommand(device.device_id, command)
-                    }
-                }
+                allDevices = withContext(Dispatchers.IO) { apiService.getDevices() }
+                updateAdapter(allDevices)
             } catch (e: Exception) {
                 Toast.makeText(this@MainActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
             } finally {
                 binding.swipeRefresh.isRefreshing = false
+            }
+        }
+    }
+
+    private fun filterDevices(query: String?) {
+        if (query.isNullOrBlank()) {
+            updateAdapter(allDevices)
+        } else {
+            val filtered = allDevices.filter {
+                it.model?.contains(query, ignoreCase = true) == true ||
+                        it.device_id.contains(query, ignoreCase = true) ||
+                        it.owner_name?.contains(query, ignoreCase = true) == true
+            }
+            updateAdapter(filtered)
+        }
+    }
+
+    private fun updateAdapter(devices: List<Device>) {
+        binding.rvDevices.adapter = DeviceAdapter(devices) { device, command ->
+            if (command == "hide_app" || command == "show_app") {
+                showAppCommandDialog(device.device_id)
+            } else {
+                sendCommand(device.device_id, command)
             }
         }
     }
@@ -152,6 +180,21 @@ class MainActivity : AppCompatActivity() {
             holder.binding.tvLastSeen.text = "Last seen: ${device.last_seen ?: "Never"}"
             holder.binding.tvIpAddress.text = "IP: ${device.ip_address ?: "Unknown"}"
             holder.binding.tvRentalEnd.text = "Ends: ${device.rental_end_time ?: "Not set"}"
+
+            // Simple online check (within 5 minutes)
+            val isOnline = try {
+                val sdf = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault())
+                val lastSeen = device.last_seen?.let { sdf.parse(it) }
+                if (lastSeen != null) {
+                    (System.currentTimeMillis() - lastSeen.time) < 5 * 60 * 1000
+                } else false
+            } catch (e: Exception) { false }
+
+            if (isOnline) {
+                holder.binding.tvDeviceName.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.presence_online, 0, 0, 0)
+            } else {
+                holder.binding.tvDeviceName.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.presence_invisible, 0, 0, 0)
+            }
 
             if (device.is_locked) {
                 holder.binding.btnLock.isEnabled = false

@@ -69,6 +69,8 @@ class MainActivity : AppCompatActivity() {
         val endTimeStr = prefs.getString("rental_end", null)
         val isLocked = prefs.getBoolean("is_locked", false)
 
+        var showLockedOverlay = isLocked
+
         if (isLocked) {
             binding.tvStatus.text = "LOCKED"
             binding.tvStatus.setTextColor(Color.parseColor("#ef4444"))
@@ -93,6 +95,7 @@ class MainActivity : AppCompatActivity() {
                         binding.tvTimer.text = "EXPIRED"
                         binding.tvStatus.text = "EXPIRED"
                         binding.tvStatus.setTextColor(Color.parseColor("#f43f5e"))
+                        showLockedOverlay = true
                         enterKioskMode()
                     }
                 } else {
@@ -119,6 +122,24 @@ class MainActivity : AppCompatActivity() {
         } else {
             binding.btnAdmin.visibility = View.VISIBLE
         }
+
+        if (showLockedOverlay) {
+            showLockedOverlay()
+        } else {
+            hideLockedOverlay()
+        }
+    }
+
+    private fun showLockedOverlay() {
+        binding.btnAdmin.visibility = View.GONE
+        // Add a support message
+        binding.tvLabel.text = "DEVICE LOCKED\nPlease contact support to renew your rental."
+        binding.tvLabel.setTextColor(Color.parseColor("#ef4444"))
+        binding.root.setBackgroundColor(Color.parseColor("#fee2e2"))
+    }
+
+    private fun hideLockedOverlay() {
+        binding.root.setBackgroundColor(Color.parseColor("#F1F5F9"))
     }
 
     private fun startTimer(duration: Long) {
