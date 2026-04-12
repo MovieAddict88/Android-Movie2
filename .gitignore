@@ -1,0 +1,11 @@
+# PHP
+/backend/config.php (if it contains sensitive info, but here it's a template)
+.vscode/
+
+# Android
+.gradle/
+build/
+*.iml
+local.properties
+.idea/
+capture/
