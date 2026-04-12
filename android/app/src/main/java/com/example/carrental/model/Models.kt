@@ -47,3 +47,20 @@ data class BookingRequest(
     val start_date: String,
     val end_date: String
 )
+
+data class Booking(
+    val id: Int,
+    val user_id: Int,
+    val car_id: Int,
+    val brand: String,
+    val model: String,
+    val start_date: String,
+    val end_date: String,
+    val total_price: Double,
+    val status: String
+)
+
+data class BookingListResponse(
+    val status: String,
+    val bookings: List<Booking>
+)
