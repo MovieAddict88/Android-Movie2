@@ -1,11 +1,18 @@
-# PHP
-/backend/config.php (if it contains sensitive info, but here it's a template)
-.vscode/
-
 # Android
-.gradle/
-build/
-*.iml
-local.properties
-.idea/
-capture/
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+android/.idea/
+
+# PHP
+backend/vendor/
+backend/.env
+backend/.vscode/
+
+# Database
+database/*.log
+
+# OS
+.DS_Store
+Thumbs.db

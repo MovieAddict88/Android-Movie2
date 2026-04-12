@@ -112,21 +112,54 @@ $cars = $pdo->query("SELECT * FROM cars ORDER BY created_at DESC")->fetchAll();
                 <input type="hidden" name="add_car" value="1">
                 <div class="grid grid-cols-2 gap-4">
                     <div class="mb-4">
-                        <label class="block text-sm">Brand</label>
-                        <input type="text" name="brand" class="w-full border p-2 rounded" required>
+                        <label class="block text-sm font-semibold">Brand</label>
+                        <input type="text" name="brand" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500" required>
                     </div>
                     <div class="mb-4">
-                        <label class="block text-sm">Model</label>
-                        <input type="text" name="model" class="w-full border p-2 rounded" required>
+                        <label class="block text-sm font-semibold">Model</label>
+                        <input type="text" name="model" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500" required>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="mb-4">
+                        <label class="block text-sm font-semibold">Type</label>
+                        <select name="type" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500">
+                            <option value="Sedan">Sedan</option>
+                            <option value="SUV">SUV</option>
+                            <option value="Luxury">Luxury</option>
+                            <option value="Hatchback">Hatchback</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-semibold">Seats</label>
+                        <input type="number" name="seats" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500" value="5" required>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="mb-4">
+                        <label class="block text-sm font-semibold">Fuel</label>
+                        <select name="fuel" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500">
+                            <option value="Petrol">Petrol</option>
+                            <option value="Diesel">Diesel</option>
+                            <option value="Electric">Electric</option>
+                            <option value="Hybrid">Hybrid</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-semibold">Transmission</label>
+                        <select name="transmission" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500">
+                            <option value="Automatic">Automatic</option>
+                            <option value="Manual">Manual</option>
+                        </select>
                     </div>
                 </div>
                 <div class="mb-4">
-                    <label class="block text-sm">Daily Rate ($)</label>
-                    <input type="number" step="0.01" name="rate" class="w-full border p-2 rounded" required>
+                    <label class="block text-sm font-semibold">Daily Rate ($)</label>
+                    <input type="number" step="0.01" name="rate" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500" required>
                 </div>
                 <div class="mb-4">
-                    <label class="block text-sm">Image URL</label>
-                    <input type="text" name="image" class="w-full border p-2 rounded">
+                    <label class="block text-sm font-semibold">Image URL</label>
+                    <input type="text" name="image" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500" placeholder="https://...">
                 </div>
                 <div class="flex justify-end gap-2">
                     <button type="button" onclick="document.getElementById('addModal').classList.add('hidden')" class="bg-gray-300 px-4 py-2 rounded">Cancel</button>
