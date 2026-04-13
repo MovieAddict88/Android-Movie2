@@ -15,4 +15,12 @@ function isAdmin() {
 function sanitize($data) {
     return htmlspecialchars(stripslashes(trim($data)));
 }
+
+function getSetting($key, $default = '') {
+    global $pdo;
+    $stmt = $pdo->prepare("SELECT value FROM settings WHERE `key` = ?");
+    $stmt->execute([$key]);
+    $result = $stmt->fetch();
+    return $result ? $result['value'] : $default;
+}
 ?>

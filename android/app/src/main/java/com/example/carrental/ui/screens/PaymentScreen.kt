@@ -39,7 +39,8 @@ fun PaymentScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(text = "Payment for Booking #$bookingId", style = MaterialTheme.typography.headlineMedium)
-        Text(text = "Amount to Pay: $$amount", style = MaterialTheme.typography.titleLarge)
+        Text(text = "Required Downpayment: $amount", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
+        Text(text = "Please pay the amount above to confirm your booking.", style = MaterialTheme.typography.bodyMedium)
 
         Text(text = "Select Payment Method")
         paymentMethods.forEach { method ->

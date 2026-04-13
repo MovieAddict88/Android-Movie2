@@ -28,9 +28,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_car'])) {
     $rate = (float)$_POST['rate'];
     $seats = (int)$_POST['seats'];
     $image = sanitize($_POST['image']);
+    $has_dash_cam = isset($_POST['has_dash_cam']) ? 1 : 0;
 
-    $stmt = $pdo->prepare("INSERT INTO cars (brand, model, type, fuel_type, transmission, daily_rate, seating_capacity, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-    if ($stmt->execute([$brand, $model, $type, $fuel, $transmission, $rate, $seats, $image])) {
+    $stmt = $pdo->prepare("INSERT INTO cars (brand, model, type, fuel_type, transmission, daily_rate, seating_capacity, image, has_dash_cam) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    if ($stmt->execute([$brand, $model, $type, $fuel, $transmission, $rate, $seats, $image, $has_dash_cam])) {
         $success = "Car added successfully!";
     }
 }
@@ -55,6 +56,8 @@ $cars = $pdo->query("SELECT * FROM cars ORDER BY created_at DESC")->fetchAll();
             <a href="manage_bookings.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-calendar-check mr-2"></i> Bookings</a>
             <a href="manage_payments.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-money-bill-wave mr-2"></i> Payments</a>
             <a href="manage_users.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-users mr-2"></i> Customers</a>
+            <a href="manage_settings.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-cog mr-2"></i> Settings</a>
+            <a href="tracking.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-map-marker-alt mr-2"></i> Live Tracking</a>
             <a href="../logout.php" class="block py-2.5 px-4 rounded hover:bg-red-600 transition mt-8"><i class="fas fa-sign-out-alt mr-2"></i> Logout</a>
         </nav>
     </div>
@@ -76,6 +79,7 @@ $cars = $pdo->query("SELECT * FROM cars ORDER BY created_at DESC")->fetchAll();
                         <th class="p-3 border-b">Image</th>
                         <th class="p-3 border-b">Brand/Model</th>
                         <th class="p-3 border-b">Type</th>
+                        <th class="p-3 border-b">Dash Cam</th>
                         <th class="p-3 border-b">Daily Rate</th>
                         <th class="p-3 border-b">Status</th>
                         <th class="p-3 border-b">Actions</th>
@@ -89,6 +93,7 @@ $cars = $pdo->query("SELECT * FROM cars ORDER BY created_at DESC")->fetchAll();
                         </td>
                         <td class="p-3 border-b"><?= $car['brand'] . ' ' . $car['model'] ?></td>
                         <td class="p-3 border-b"><?= $car['type'] ?></td>
+                        <td class="p-3 border-b"><?= $car['has_dash_cam'] ? 'Yes' : 'No' ?></td>
                         <td class="p-3 border-b font-bold">$<?= $car['daily_rate'] ?></td>
                         <td class="p-3 border-b">
                             <span class="<?= $car['availability_status'] ? 'text-green-600' : 'text-red-600' ?>">
@@ -161,6 +166,12 @@ $cars = $pdo->query("SELECT * FROM cars ORDER BY created_at DESC")->fetchAll();
                 <div class="mb-4">
                     <label class="block text-sm font-semibold">Image URL</label>
                     <input type="text" name="image" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500" placeholder="https://...">
+                </div>
+                <div class="mb-4">
+                    <label class="flex items-center">
+                        <input type="checkbox" name="has_dash_cam" value="1" class="mr-2">
+                        <span class="text-sm font-semibold">Has Dash Cam</span>
+                    </label>
                 </div>
                 <div class="flex justify-end gap-2">
                     <button type="button" onclick="document.getElementById('addModal').classList.add('hidden')" class="bg-gray-300 px-4 py-2 rounded">Cancel</button>

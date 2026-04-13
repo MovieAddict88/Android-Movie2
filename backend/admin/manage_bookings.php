@@ -15,7 +15,15 @@ if (isset($_GET['action']) && isset($_GET['id'])) {
     }
 }
 
-$bookings = $pdo->query("SELECT b.*, u.name as user_name, u.email as user_email, c.brand, c.model FROM bookings b JOIN users u ON b.user_id = u.id JOIN cars c ON b.car_id = c.id ORDER BY b.created_at DESC")->fetchAll();
+if (isset($_POST['assign_driver'])) {
+    $booking_id = (int)$_POST['booking_id'];
+    $driver_id = (int)$_POST['driver_id'];
+    $stmt = $pdo->prepare("UPDATE bookings SET driver_id = ? WHERE id = ?");
+    $stmt->execute([$driver_id, $booking_id]);
+}
+
+$bookings = $pdo->query("SELECT b.*, u.name as user_name, u.email as user_email, c.brand, c.model, d.name as driver_name FROM bookings b JOIN users u ON b.user_id = u.id JOIN cars c ON b.car_id = c.id LEFT JOIN users d ON b.driver_id = d.id ORDER BY b.created_at DESC")->fetchAll();
+$drivers = $pdo->query("SELECT id, name FROM users WHERE role = 'driver'")->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -35,6 +43,8 @@ $bookings = $pdo->query("SELECT b.*, u.name as user_name, u.email as user_email,
             <a href="manage_bookings.php" class="block py-2.5 px-4 rounded bg-blue-900 transition"><i class="fas fa-calendar-check mr-2"></i> Bookings</a>
             <a href="manage_payments.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-money-bill-wave mr-2"></i> Payments</a>
             <a href="manage_users.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-users mr-2"></i> Customers</a>
+            <a href="manage_settings.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-cog mr-2"></i> Settings</a>
+            <a href="tracking.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-map-marker-alt mr-2"></i> Live Tracking</a>
             <a href="../logout.php" class="block py-2.5 px-4 rounded hover:bg-red-600 transition mt-8"><i class="fas fa-sign-out-alt mr-2"></i> Logout</a>
         </nav>
     </div>
@@ -50,7 +60,9 @@ $bookings = $pdo->query("SELECT b.*, u.name as user_name, u.email as user_email,
                         <th class="p-3 border-b">Customer</th>
                         <th class="p-3 border-b">Car</th>
                         <th class="p-3 border-b">Dates</th>
-                        <th class="p-3 border-b">Total</th>
+                        <th class="p-3 border-b">Details</th>
+                        <th class="p-3 border-b">Total/DP</th>
+                        <th class="p-3 border-b">Driver</th>
                         <th class="p-3 border-b">Status</th>
                         <th class="p-3 border-b">Actions</th>
                     </tr>
@@ -67,7 +79,34 @@ $bookings = $pdo->query("SELECT b.*, u.name as user_name, u.email as user_email,
                         <td class="p-3 border-b text-sm">
                             <?= $booking['start_date'] ?> to <?= $booking['end_date'] ?>
                         </td>
-                        <td class="p-3 border-b font-bold">$<?= $booking['total_price'] ?></td>
+                        <td class="p-3 border-b text-xs">
+                            With Driver: <?= $booking['with_driver'] ? 'Yes' : 'No' ?><br>
+                            Carwash: $<?= $booking['carwash_amount'] ?>
+                        </td>
+                        <td class="p-3 border-b font-bold text-sm">
+                            Total: $<?= $booking['total_price'] ?><br>
+                            DP: $<?= $booking['downpayment_amount'] ?>
+                        </td>
+                        <td class="p-3 border-b">
+                            <?php if($booking['with_driver']): ?>
+                                <?php if($booking['driver_name']): ?>
+                                    <span class="text-green-600"><?= $booking['driver_name'] ?></span>
+                                <?php else: ?>
+                                    <form action="" method="POST" class="flex items-center">
+                                        <input type="hidden" name="assign_driver" value="1">
+                                        <input type="hidden" name="booking_id" value="<?= $booking['id'] ?>">
+                                        <select name="driver_id" class="text-xs border rounded p-1" required onchange="this.form.submit()">
+                                            <option value="">Assign...</option>
+                                            <?php foreach($drivers as $driver): ?>
+                                                <option value="<?= $driver['id'] ?>"><?= $driver['name'] ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </form>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <span class="text-gray-400">N/A</span>
+                            <?php endif; ?>
+                        </td>
                         <td class="p-3 border-b">
                             <span class="px-2 py-1 rounded-full text-xs <?= $booking['status'] === 'confirmed' ? 'bg-green-100 text-green-700' : ($booking['status'] === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700') ?>">
                                 <?= ucfirst($booking['status']) ?>

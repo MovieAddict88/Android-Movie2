@@ -1,7 +1,14 @@
+<?php
+$app_name = getSetting('app_name', 'CarRental');
+$app_logo = getSetting('app_logo', 'assets/img/logo.png');
+?>
 <nav class="bg-white shadow-lg sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4">
         <div class="flex justify-between items-center h-16">
-            <a href="index.php" class="text-2xl font-bold text-blue-600">CarRental</a>
+            <a href="index.php" class="flex items-center text-2xl font-bold text-blue-600">
+                <img src="<?= $app_logo ?>" alt="Logo" class="h-8 mr-2">
+                <?= htmlspecialchars($app_name) ?>
+            </a>
             <div class="hidden md:flex space-x-8">
                 <a href="index.php" class="text-gray-700 hover:text-blue-600">Home</a>
                 <a href="cars.php" class="text-gray-700 hover:text-blue-600">Cars</a>

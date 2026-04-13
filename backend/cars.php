@@ -46,7 +46,12 @@ $cars = $stmt->fetchAll();
                             <h3 class="text-xl font-bold"><?= $car['brand'] . ' ' . $car['model'] ?></h3>
                             <span class="text-blue-600 font-bold">$<?= $car['daily_rate'] ?>/day</span>
                         </div>
-                        <p class="text-gray-600 mb-4"><?= $car['type'] ?> | <?= $car['transmission'] ?> | <?= $car['fuel_type'] ?></p>
+                        <p class="text-gray-600 mb-2"><?= $car['type'] ?> | <?= $car['transmission'] ?> | <?= $car['fuel_type'] ?></p>
+                        <?php if ($car['has_dash_cam']): ?>
+                            <p class="text-xs text-green-600 mb-4"><i class="fas fa-video mr-1"></i> Dash Cam Included</p>
+                        <?php else: ?>
+                            <p class="mb-4"></p>
+                        <?php endif; ?>
                         <a href="booking.php?id=<?= $car['id'] ?>" class="block text-center bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">Book Now</a>
                     </div>
                 </div>

@@ -10,6 +10,7 @@ data class Car(
     val daily_rate: Double,
     val seating_capacity: Int,
     val image: String?,
+    val has_dash_cam: Int,
     val availability_status: Int
 )
 
@@ -45,7 +46,9 @@ data class BookingRequest(
     val user_id: Int,
     val car_id: Int,
     val start_date: String,
-    val end_date: String
+    val end_date: String,
+    val with_driver: Int = 0,
+    val include_carwash: Int = 0
 )
 
 data class Booking(
@@ -57,7 +60,23 @@ data class Booking(
     val start_date: String,
     val end_date: String,
     val total_price: Double,
+    val with_driver: Int,
+    val carwash_amount: Double,
+    val downpayment_amount: Double,
     val status: String
+)
+
+data class AppSettings(
+    val app_name: String,
+    val app_logo: String,
+    val carwash_amount: String,
+    val downpayment_type: String,
+    val downpayment_value: String
+)
+
+data class SettingsResponse(
+    val status: String,
+    val settings: AppSettings
 )
 
 data class BookingListResponse(

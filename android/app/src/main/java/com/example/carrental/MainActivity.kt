@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
 import com.example.carrental.ui.screens.CarListScreen
 import com.example.carrental.ui.screens.LoginScreen
 import com.example.carrental.ui.screens.PaymentScreen
@@ -38,11 +40,16 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.padding(innerPadding)
                     ) {
                         composable("login") {
-                            LoginScreen(onLoginSuccess = {
-                                navController.navigate("car_list") {
-                                    popUpTo("login") { inclusive = true }
+                            val viewModel: CarViewModel = viewModel()
+                            val settings by viewModel.settings.collectAsState()
+                            LoginScreen(
+                                appName = settings?.app_name ?: "Car Rental",
+                                onLoginSuccess = {
+                                    navController.navigate("car_list") {
+                                        popUpTo("login") { inclusive = true }
+                                    }
                                 }
-                            })
+                            )
                         }
                         composable("car_list") {
                             val viewModel: CarViewModel = viewModel()
