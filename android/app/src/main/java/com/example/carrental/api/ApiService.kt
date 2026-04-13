@@ -34,4 +34,7 @@ interface ApiService {
 
     @POST("api/admin/update_payment_status.php")
     suspend fun updatePaymentStatus(@Body request: UpdatePaymentStatusRequest): Response<BaseResponse>
+
+    @POST("api/update_location.php")
+    suspend fun updateLocation(@Body request: LocationRequest): Response<BaseResponse>
 }
