@@ -88,3 +88,10 @@ data class UpdatePaymentStatusRequest(
     val action: String,
     val rejection_reason: String? = null
 )
+
+data class LocationRequest(
+    val user_id: Int,
+    val car_id: Int,
+    val lat: Double,
+    val lng: Double
+)
