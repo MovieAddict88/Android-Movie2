@@ -24,105 +24,128 @@ if (isset($_POST['assign_driver'])) {
 
 $bookings = $pdo->query("SELECT b.*, u.name as user_name, u.email as user_email, c.brand, c.model, d.name as driver_name FROM bookings b JOIN users u ON b.user_id = u.id JOIN cars c ON b.car_id = c.id LEFT JOIN users d ON b.driver_id = d.id ORDER BY b.created_at DESC")->fetchAll();
 $drivers = $pdo->query("SELECT id, name FROM users WHERE role = 'driver'")->fetchAll();
+
+$page_title = 'Manage Bookings';
+$current_page = 'bookings';
+
+include 'includes/header.php';
+include 'includes/sidebar.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Manage Bookings - Admin</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-</head>
-<body class="bg-gray-100 flex">
-    <!-- Sidebar -->
-    <div class="bg-blue-800 text-white w-64 min-h-screen p-4">
-        <h2 class="text-2xl font-bold mb-8 text-center">Admin Panel</h2>
-        <nav class="space-y-2">
-            <a href="dashboard.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-tachometer-alt mr-2"></i> Dashboard</a>
-            <a href="manage_cars.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-car mr-2"></i> Manage Cars</a>
-            <a href="manage_bookings.php" class="block py-2.5 px-4 rounded bg-blue-900 transition"><i class="fas fa-calendar-check mr-2"></i> Bookings</a>
-            <a href="manage_payments.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-money-bill-wave mr-2"></i> Payments</a>
-            <a href="manage_users.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-users mr-2"></i> Customers</a>
-            <a href="manage_settings.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-cog mr-2"></i> Settings</a>
-            <a href="tracking.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-map-marker-alt mr-2"></i> Live Tracking</a>
-            <a href="../logout.php" class="block py-2.5 px-4 rounded hover:bg-red-600 transition mt-8"><i class="fas fa-sign-out-alt mr-2"></i> Logout</a>
-        </nav>
+
+<div class="flex justify-between items-center mb-8">
+    <div>
+        <h2 class="text-2xl font-bold text-gray-800">Booking Management</h2>
+        <p class="text-gray-500 text-sm">Monitor and manage all customer vehicle reservations.</p>
     </div>
+</div>
 
-    <div class="flex-1 p-8">
-        <h1 class="text-3xl font-bold mb-8">All Bookings</h1>
-
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
-            <table class="w-full text-left border-collapse">
-                <thead class="bg-gray-100">
-                    <tr>
-                        <th class="p-3 border-b">ID</th>
-                        <th class="p-3 border-b">Customer</th>
-                        <th class="p-3 border-b">Car</th>
-                        <th class="p-3 border-b">Dates</th>
-                        <th class="p-3 border-b">Details</th>
-                        <th class="p-3 border-b">Total/DP</th>
-                        <th class="p-3 border-b">Driver</th>
-                        <th class="p-3 border-b">Status</th>
-                        <th class="p-3 border-b">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach($bookings as $booking): ?>
-                    <tr class="hover:bg-gray-50">
-                        <td class="p-3 border-b"><?= $booking['id'] ?></td>
-                        <td class="p-3 border-b">
-                            <?= $booking['user_name'] ?><br>
-                            <span class="text-xs text-gray-500"><?= $booking['user_email'] ?></span>
-                        </td>
-                        <td class="p-3 border-b"><?= $booking['brand'] . ' ' . $booking['model'] ?></td>
-                        <td class="p-3 border-b text-sm">
-                            <?= $booking['start_date'] ?> to <?= $booking['end_date'] ?>
-                        </td>
-                        <td class="p-3 border-b text-xs">
-                            With Driver: <?= $booking['with_driver'] ? 'Yes' : 'No' ?><br>
-                            Carwash: $<?= $booking['carwash_amount'] ?>
-                        </td>
-                        <td class="p-3 border-b font-bold text-sm">
-                            Total: $<?= $booking['total_price'] ?><br>
-                            DP: $<?= $booking['downpayment_amount'] ?>
-                        </td>
-                        <td class="p-3 border-b">
-                            <?php if($booking['with_driver']): ?>
-                                <?php if($booking['driver_name']): ?>
-                                    <span class="text-green-600"><?= $booking['driver_name'] ?></span>
-                                <?php else: ?>
-                                    <form action="" method="POST" class="flex items-center">
-                                        <input type="hidden" name="assign_driver" value="1">
-                                        <input type="hidden" name="booking_id" value="<?= $booking['id'] ?>">
-                                        <select name="driver_id" class="text-xs border rounded p-1" required onchange="this.form.submit()">
-                                            <option value="">Assign...</option>
-                                            <?php foreach($drivers as $driver): ?>
-                                                <option value="<?= $driver['id'] ?>"><?= $driver['name'] ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </form>
-                                <?php endif; ?>
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left">
+            <thead>
+                <tr class="text-gray-400 text-xs uppercase tracking-wider">
+                    <th class="px-6 py-4 font-semibold">Booking ID</th>
+                    <th class="px-6 py-4 font-semibold">Customer</th>
+                    <th class="px-6 py-4 font-semibold">Vehicle</th>
+                    <th class="px-6 py-4 font-semibold">Dates & Options</th>
+                    <th class="px-6 py-4 font-semibold">Financials</th>
+                    <th class="px-6 py-4 font-semibold text-center">Driver</th>
+                    <th class="px-6 py-4 font-semibold text-center">Status</th>
+                    <th class="px-6 py-4 font-semibold text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                <?php foreach($bookings as $booking): ?>
+                <tr class="hover:bg-gray-50/50 transition">
+                    <td class="px-6 py-4">
+                        <span class="font-mono font-bold text-blue-600">#<?= $booking['id'] ?></span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="font-semibold text-gray-900"><?= htmlspecialchars($booking['user_name']) ?></div>
+                        <div class="text-xs text-gray-500"><?= htmlspecialchars($booking['user_email']) ?></div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm font-medium text-gray-800"><?= htmlspecialchars($booking['brand'] . ' ' . $booking['model']) ?></div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-xs text-gray-600 space-y-1">
+                            <div><i class="far fa-calendar-alt mr-1 text-blue-500"></i> <?= date('M d', strtotime($booking['start_date'])) ?> - <?= date('M d, Y', strtotime($booking['end_date'])) ?></div>
+                            <div>
+                                <i class="fas fa-user-tie mr-1 <?= $booking['with_driver'] ? 'text-green-500' : 'text-gray-300' ?>"></i> Driver: <?= $booking['with_driver'] ? 'Yes' : 'No' ?>
+                                <i class="fas fa-broom ml-2 mr-1 <?= $booking['carwash_amount'] > 0 ? 'text-blue-500' : 'text-gray-300' ?>"></i> Wash: <?= $booking['carwash_amount'] > 0 ? 'Yes' : 'No' ?>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm">
+                            <div class="font-bold text-gray-900">$<?= number_format($booking['total_price'], 2) ?></div>
+                            <div class="text-[10px] text-gray-500 uppercase tracking-tight">DP: $<?= number_format($booking['downpayment_amount'], 2) ?></div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <?php if($booking['with_driver']): ?>
+                            <?php if($booking['driver_name']): ?>
+                                <span class="inline-flex items-center px-2 py-1 rounded-lg bg-green-50 text-green-700 text-xs font-semibold">
+                                    <i class="fas fa-id-card mr-1.5"></i> <?= htmlspecialchars($booking['driver_name']) ?>
+                                </span>
                             <?php else: ?>
-                                <span class="text-gray-400">N/A</span>
+                                <form action="" method="POST">
+                                    <input type="hidden" name="assign_driver" value="1">
+                                    <input type="hidden" name="booking_id" value="<?= $booking['id'] ?>">
+                                    <select name="driver_id" class="text-[10px] border border-blue-200 rounded-lg p-1 bg-blue-50 text-blue-700 focus:ring-2 focus:ring-blue-500 outline-none" required onchange="this.form.submit()">
+                                        <option value="">Assign Driver...</option>
+                                        <?php foreach($drivers as $driver): ?>
+                                            <option value="<?= $driver['id'] ?>"><?= $driver['name'] ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </form>
                             <?php endif; ?>
-                        </td>
-                        <td class="p-3 border-b">
-                            <span class="px-2 py-1 rounded-full text-xs <?= $booking['status'] === 'confirmed' ? 'bg-green-100 text-green-700' : ($booking['status'] === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700') ?>">
-                                <?= ucfirst($booking['status']) ?>
-                            </span>
-                        </td>
-                        <td class="p-3 border-b">
+                        <?php else: ?>
+                            <span class="text-gray-300 text-xs">-</span>
+                        <?php endif; ?>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <?php
+                        $status_classes = [
+                            'confirmed' => 'bg-emerald-100 text-emerald-700',
+                            'pending' => 'bg-amber-100 text-amber-700',
+                            'cancelled' => 'bg-rose-100 text-rose-700',
+                            'completed' => 'bg-blue-100 text-blue-700'
+                        ];
+                        $class = $status_classes[$booking['status']] ?? 'bg-slate-100 text-slate-700';
+                        ?>
+                        <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider <?= $class ?>">
+                            <?= $booking['status'] ?>
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="flex justify-end gap-1">
                             <?php if($booking['status'] === 'pending'): ?>
-                                <a href="?action=confirm&id=<?= $booking['id'] ?>" class="text-green-600 hover:text-green-900 mr-2" title="Confirm"><i class="fas fa-check"></i></a>
-                                <a href="?action=cancel&id=<?= $booking['id'] ?>" class="text-red-600 hover:text-red-900" title="Cancel"><i class="fas fa-times"></i></a>
+                                <a href="?action=confirm&id=<?= $booking['id'] ?>" class="p-2 text-emerald-500 hover:bg-emerald-50 rounded-lg transition" title="Confirm Booking">
+                                    <i class="fas fa-check-circle"></i>
+                                </a>
+                                <a href="?action=cancel&id=<?= $booking['id'] ?>" class="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition" title="Cancel Booking">
+                                    <i class="fas fa-times-circle"></i>
+                                </a>
                             <?php endif; ?>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
+                            <button class="p-2 text-slate-400 hover:bg-slate-50 rounded-lg transition" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+                <?php if(empty($bookings)): ?>
+                <tr>
+                    <td colspan="8" class="px-6 py-10 text-center text-gray-400">
+                        <i class="fas fa-calendar-times fa-3x mb-3 opacity-20"></i>
+                        <p>No bookings found in the system.</p>
+                    </td>
+                </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
     </div>
-</body>
-</html>
+</div>
+
+<?php include 'includes/footer.php'; ?>

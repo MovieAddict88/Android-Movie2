@@ -32,122 +32,150 @@ if (isset($_POST['action']) && isset($_POST['payment_id'])) {
 }
 
 $payments = $pdo->query("SELECT p.*, b.total_price, u.name as user_name FROM payments p JOIN bookings b ON p.booking_id = b.id JOIN users u ON b.user_id = u.id ORDER BY p.created_at DESC")->fetchAll();
+
+$page_title = 'Manage Payments';
+$current_page = 'payments';
+
+include 'includes/header.php';
+include 'includes/sidebar.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Manage Payments - Admin Panel</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-</head>
-<body class="bg-gray-100 flex">
-    <!-- Sidebar -->
-    <div class="bg-blue-800 text-white w-64 min-h-screen p-4">
-        <h2 class="text-2xl font-bold mb-8 text-center">Admin Panel</h2>
-        <nav class="space-y-2">
-            <a href="dashboard.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-tachometer-alt mr-2"></i> Dashboard</a>
-            <a href="manage_cars.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-car mr-2"></i> Manage Cars</a>
-            <a href="manage_bookings.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-calendar-check mr-2"></i> Bookings</a>
-            <a href="manage_payments.php" class="block py-2.5 px-4 rounded bg-blue-900 transition"><i class="fas fa-money-bill-wave mr-2"></i> Payments</a>
-            <a href="manage_users.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-users mr-2"></i> Customers</a>
-            <a href="manage_settings.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-cog mr-2"></i> Settings</a>
-            <a href="tracking.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-map-marker-alt mr-2"></i> Live Tracking</a>
-            <a href="../logout.php" class="block py-2.5 px-4 rounded hover:bg-red-600 transition mt-8"><i class="fas fa-sign-out-alt mr-2"></i> Logout</a>
-        </nav>
+
+<div class="flex justify-between items-center mb-8">
+    <div>
+        <h2 class="text-2xl font-bold text-gray-800">Financial Transactions</h2>
+        <p class="text-gray-500 text-sm">Review and verify customer payments and proofs.</p>
     </div>
+</div>
 
-    <!-- Main Content -->
-    <div class="flex-1 p-8">
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-bold">Manage Payments</h1>
-            <div class="text-gray-600">Welcome, <?= $_SESSION['name'] ?></div>
-        </div>
+<?php if (isset($_SESSION['success'])): ?>
+    <div class="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-xl mb-6 flex items-center shadow-sm">
+        <i class="fas fa-check-circle mr-2"></i> <?= $_SESSION['success']; unset($_SESSION['success']); ?>
+    </div>
+<?php endif; ?>
 
-        <?php if (isset($_SESSION['success'])): ?>
-            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-                <?= $_SESSION['success']; unset($_SESSION['success']); ?>
-            </div>
-        <?php endif; ?>
-
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
-            <table class="w-full text-left border-collapse">
-                <thead class="bg-gray-100">
-                    <tr>
-                        <th class="p-3 border-b">ID</th>
-                        <th class="p-3 border-b">User</th>
-                        <th class="p-3 border-b">Method</th>
-                        <th class="p-3 border-b">Ref #</th>
-                        <th class="p-3 border-b">Amount</th>
-                        <th class="p-3 border-b">Proof</th>
-                        <th class="p-3 border-b">Status</th>
-                        <th class="p-3 border-b">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach($payments as $payment): ?>
-                    <tr class="hover:bg-gray-50">
-                        <td class="p-3 border-b"><?= $payment['id'] ?></td>
-                        <td class="p-3 border-b"><?= $payment['user_name'] ?></td>
-                        <td class="p-3 border-b"><?= $payment['payment_method'] ?></td>
-                        <td class="p-3 border-b"><?= $payment['reference_number'] ?></td>
-                        <td class="p-3 border-b font-bold">$<?= $payment['amount'] ?></td>
-                        <td class="p-3 border-b">
-                            <?php if ($payment['proof_of_payment']): ?>
-                                <a href="../uploads/payments/<?= $payment['proof_of_payment'] ?>" target="_blank" class="text-blue-600 hover:underline">View Proof</a>
-                            <?php else: ?>
-                                No proof
-                            <?php endif; ?>
-                        </td>
-                        <td class="p-3 border-b">
-                            <span class="px-2 py-1 rounded-full text-xs <?= $payment['status'] === 'approved' ? 'bg-green-100 text-green-700' : ($payment['status'] === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700') ?>">
-                                <?= ucfirst($payment['status']) ?>
-                            </span>
-                        </td>
-                        <td class="p-3 border-b">
-                            <?php if ($payment['status'] === 'pending'): ?>
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left">
+            <thead>
+                <tr class="text-gray-400 text-xs uppercase tracking-wider">
+                    <th class="px-6 py-4 font-semibold">Transaction</th>
+                    <th class="px-6 py-4 font-semibold">Customer</th>
+                    <th class="px-6 py-4 font-semibold">Method</th>
+                    <th class="px-6 py-4 font-semibold">Reference #</th>
+                    <th class="px-6 py-4 font-semibold">Amount</th>
+                    <th class="px-6 py-4 font-semibold">Proof</th>
+                    <th class="px-6 py-4 font-semibold text-center">Status</th>
+                    <th class="px-6 py-4 font-semibold text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                <?php foreach($payments as $payment): ?>
+                <tr class="hover:bg-gray-50/50 transition">
+                    <td class="px-6 py-4">
+                        <span class="font-mono font-bold text-slate-400 text-xs">TRX-<?= str_pad($payment['id'], 5, '0', STR_PAD_LEFT) ?></span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="font-semibold text-gray-900"><?= htmlspecialchars($payment['user_name']) ?></div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="inline-flex items-center px-2 py-1 rounded bg-slate-100 text-slate-700 text-[10px] font-bold uppercase">
+                            <?= htmlspecialchars($payment['payment_method']) ?>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="text-xs font-mono text-gray-600"><?= htmlspecialchars($payment['reference_number']) ?></span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="font-bold text-gray-900">$<?= number_format($payment['amount'], 2) ?></div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <?php if ($payment['proof_of_payment']): ?>
+                            <a href="../uploads/payments/<?= $payment['proof_of_payment'] ?>" target="_blank" class="inline-flex items-center text-blue-600 hover:text-blue-800 text-xs font-semibold underline decoration-blue-200 underline-offset-4">
+                                <i class="fas fa-file-invoice-dollar mr-1"></i> View Proof
+                            </a>
+                        <?php else: ?>
+                            <span class="text-gray-400 text-xs italic">No proof provided</span>
+                        <?php endif; ?>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <?php
+                        $status_classes = [
+                            'approved' => 'bg-emerald-100 text-emerald-700',
+                            'pending' => 'bg-amber-100 text-amber-700',
+                            'rejected' => 'bg-rose-100 text-rose-700'
+                        ];
+                        $class = $status_classes[$payment['status']] ?? 'bg-slate-100 text-slate-700';
+                        ?>
+                        <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider <?= $class ?>">
+                            <?= $payment['status'] ?>
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <?php if ($payment['status'] === 'pending'): ?>
+                            <div class="flex justify-end gap-2">
                                 <form method="POST" class="inline-block">
                                     <input type="hidden" name="payment_id" value="<?= $payment['id'] ?>">
                                     <input type="hidden" name="action" value="approved">
-                                    <button type="submit" class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition text-xs">Approve</button>
+                                    <button type="submit" class="bg-emerald-500 text-white px-3 py-1.5 rounded-lg hover:bg-emerald-600 transition text-[10px] font-bold uppercase shadow-sm shadow-emerald-200">
+                                        Approve
+                                    </button>
                                 </form>
-                                <button onclick="showRejectModal(<?= $payment['id'] ?>)" class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition text-xs">Reject</button>
-                            <?php endif; ?>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
+                                <button onclick="showRejectModal(<?= $payment['id'] ?>)" class="bg-rose-500 text-white px-3 py-1.5 rounded-lg hover:bg-rose-600 transition text-[10px] font-bold uppercase shadow-sm shadow-rose-200">
+                                    Reject
+                                </button>
+                            </div>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+                <?php if(empty($payments)): ?>
+                <tr>
+                    <td colspan="8" class="px-6 py-10 text-center text-gray-400">
+                        <i class="fas fa-money-bill-wave fa-3x mb-3 opacity-20"></i>
+                        <p>No payment transactions found.</p>
+                    </td>
+                </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
     </div>
+</div>
 
-    <!-- Reject Modal -->
-    <div id="rejectModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center">
-        <div class="bg-white p-6 rounded-lg shadow-lg w-96">
-            <h3 class="text-xl font-bold mb-4">Reject Payment</h3>
-            <form method="POST">
+<!-- Reject Modal -->
+<div id="rejectModal" class="hidden fixed inset-0 z-50 overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onclick="hideRejectModal()"></div>
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md relative z-10 overflow-hidden">
+            <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                <h3 class="text-xl font-bold text-gray-800">Reject Payment</h3>
+                <button onclick="hideRejectModal()" class="text-gray-400 hover:text-gray-600 transition">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form method="POST" class="p-6">
                 <input type="hidden" name="payment_id" id="modal_payment_id">
                 <input type="hidden" name="action" value="rejected">
-                <div class="mb-4">
-                    <label class="block text-gray-700 mb-2">Reason for rejection</label>
-                    <textarea name="rejection_reason" class="w-full border rounded p-2" required></textarea>
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Reason for rejection</label>
+                    <textarea name="rejection_reason" class="w-full bg-gray-50 border border-gray-200 p-3 rounded-xl focus:ring-2 focus:ring-rose-500 focus:bg-white outline-none transition min-h-[100px]" placeholder="Explain why this payment is being rejected..." required></textarea>
                 </div>
-                <div class="flex justify-end space-x-2">
-                    <button type="button" onclick="hideRejectModal()" class="bg-gray-300 px-4 py-2 rounded">Cancel</button>
-                    <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded">Reject</button>
+                <div class="flex justify-end gap-3">
+                    <button type="button" onclick="hideRejectModal()" class="px-6 py-2 rounded-xl bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transition">Cancel</button>
+                    <button type="submit" class="px-6 py-2 rounded-xl bg-rose-500 text-white font-semibold hover:bg-rose-600 transition shadow-lg shadow-rose-500/20">Reject Payment</button>
                 </div>
             </form>
         </div>
     </div>
+</div>
 
-    <script>
-        function showRejectModal(id) {
-            document.getElementById('modal_payment_id').value = id;
-            document.getElementById('rejectModal').classList.remove('hidden');
-        }
-        function hideRejectModal() {
-            document.getElementById('rejectModal').classList.add('hidden');
-        }
-    </script>
-</body>
-</html>
+<script>
+    function showRejectModal(id) {
+        document.getElementById('modal_payment_id').value = id;
+        document.getElementById('rejectModal').classList.remove('hidden');
+    }
+    function hideRejectModal() {
+        document.getElementById('rejectModal').classList.add('hidden');
+    }
+</script>
+
+<?php include 'includes/footer.php'; ?>

@@ -8,61 +8,79 @@ if (!isAdmin()) {
 
 $stmt = $pdo->query("SELECT * FROM users WHERE role = 'customer' ORDER BY created_at DESC");
 $users = $stmt->fetchAll();
+
+$page_title = 'Manage Customers';
+$current_page = 'users';
+
+include 'includes/header.php';
+include 'includes/sidebar.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Manage Users - CarRental</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-</head>
-<body class="bg-gray-100 flex">
-    <!-- Sidebar -->
-    <div class="bg-blue-800 text-white w-64 min-h-screen p-4">
-        <h2 class="text-2xl font-bold mb-8 text-center">Admin Panel</h2>
-        <nav class="space-y-2">
-            <a href="dashboard.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-tachometer-alt mr-2"></i> Dashboard</a>
-            <a href="manage_cars.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-car mr-2"></i> Manage Cars</a>
-            <a href="manage_bookings.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-calendar-check mr-2"></i> Bookings</a>
-            <a href="manage_payments.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-money-bill-wave mr-2"></i> Payments</a>
-            <a href="manage_users.php" class="block py-2.5 px-4 rounded bg-blue-900 transition"><i class="fas fa-users mr-2"></i> Customers</a>
-            <a href="manage_settings.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-cog mr-2"></i> Settings</a>
-            <a href="tracking.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-map-marker-alt mr-2"></i> Live Tracking</a>
-            <a href="../logout.php" class="block py-2.5 px-4 rounded hover:bg-red-600 transition mt-8"><i class="fas fa-sign-out-alt mr-2"></i> Logout</a>
-        </nav>
-    </div>
 
-    <!-- Main Content -->
-    <div class="flex-1 p-8">
-        <div class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-bold">Manage Customers</h1>
-        </div>
-
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
-            <table class="w-full text-left border-collapse">
-                <thead class="bg-gray-100">
-                    <tr>
-                        <th class="p-3 border-b">ID</th>
-                        <th class="p-3 border-b">Name</th>
-                        <th class="p-3 border-b">Email</th>
-                        <th class="p-3 border-b">Phone</th>
-                        <th class="p-3 border-b">Joined At</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach($users as $user): ?>
-                    <tr class="hover:bg-gray-50">
-                        <td class="p-3 border-b"><?= $user['id'] ?></td>
-                        <td class="p-3 border-b"><?= $user['name'] ?></td>
-                        <td class="p-3 border-b"><?= $user['email'] ?></td>
-                        <td class="p-3 border-b"><?= $user['phone'] ?: 'N/A' ?></td>
-                        <td class="p-3 border-b"><?= $user['created_at'] ?></td>
-                    </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        </div>
+<div class="flex justify-between items-center mb-8">
+    <div>
+        <h2 class="text-2xl font-bold text-gray-800">Customer Directory</h2>
+        <p class="text-gray-500 text-sm">View and manage registered customers in the system.</p>
     </div>
-</body>
-</html>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left">
+            <thead>
+                <tr class="text-gray-400 text-xs uppercase tracking-wider">
+                    <th class="px-6 py-4 font-semibold">Customer</th>
+                    <th class="px-6 py-4 font-semibold">Contact Info</th>
+                    <th class="px-6 py-4 font-semibold">Registration Date</th>
+                    <th class="px-6 py-4 font-semibold text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                <?php foreach($users as $user): ?>
+                <tr class="hover:bg-gray-50/50 transition">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center">
+                            <img src="https://ui-avatars.com/api/?name=<?= urlencode($user['name']) ?>&background=random&size=128" class="w-10 h-10 rounded-full mr-3 shadow-sm">
+                            <div>
+                                <div class="font-bold text-gray-900"><?= htmlspecialchars($user['name']) ?></div>
+                                <div class="text-[10px] text-gray-400 font-mono">ID: #<?= str_pad($user['id'], 4, '0', STR_PAD_LEFT) ?></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm text-gray-700 font-medium"><?= htmlspecialchars($user['email']) ?></div>
+                        <div class="text-xs text-gray-500"><?= htmlspecialchars($user['phone'] ?: 'No phone provided') ?></div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm text-gray-600">
+                            <?= date('M d, Y', strtotime($user['created_at'])) ?>
+                        </div>
+                        <div class="text-[10px] text-gray-400">
+                            <?= date('h:i A', strtotime($user['created_at'])) ?>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="flex justify-end gap-2">
+                            <button class="p-2 text-slate-400 hover:text-blue-600 transition" title="View Profile">
+                                <i class="fas fa-user-circle"></i>
+                            </button>
+                            <button class="p-2 text-slate-400 hover:text-red-600 transition" title="Disable Account">
+                                <i class="fas fa-user-slash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+                <?php if(empty($users)): ?>
+                <tr>
+                    <td colspan="4" class="px-6 py-10 text-center text-gray-400">
+                        <i class="fas fa-users-slash fa-3x mb-3 opacity-20"></i>
+                        <p>No customers registered yet.</p>
+                    </td>
+                </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<?php include 'includes/footer.php'; ?>
