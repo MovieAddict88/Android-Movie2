@@ -64,3 +64,27 @@ data class BookingListResponse(
     val status: String,
     val bookings: List<Booking>
 )
+
+data class Payment(
+    val id: Int,
+    val booking_id: Int,
+    val payment_method: String,
+    val reference_number: String,
+    val amount: Double,
+    val proof_of_payment: String?,
+    val status: String,
+    val rejection_reason: String?,
+    val user_name: String,
+    val created_at: String
+)
+
+data class PaymentListResponse(
+    val status: String,
+    val payments: List<Payment>
+)
+
+data class UpdatePaymentStatusRequest(
+    val payment_id: Int,
+    val action: String,
+    val rejection_reason: String? = null
+)

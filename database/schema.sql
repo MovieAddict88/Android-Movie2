@@ -39,6 +39,19 @@ CREATE TABLE IF NOT EXISTS bookings (
     FOREIGN KEY (car_id) REFERENCES cars(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS payments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    booking_id INT NOT NULL,
+    payment_method ENUM('GCash', 'PayMaya', 'Coins.ph', 'Bank Transfer') NOT NULL,
+    reference_number VARCHAR(100) NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
+    proof_of_payment VARCHAR(255),
+    status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+    rejection_reason TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS contacts (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
