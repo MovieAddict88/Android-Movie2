@@ -5,6 +5,7 @@
             <div class="hidden md:flex space-x-8">
                 <a href="index.php" class="text-gray-700 hover:text-blue-600">Home</a>
                 <a href="cars.php" class="text-gray-700 hover:text-blue-600">Cars</a>
+                <a href="map.php" class="text-gray-700 hover:text-blue-600">Map</a>
                 <a href="contact.php" class="text-gray-700 hover:text-blue-600">Contact</a>
                 <?php if(isLoggedIn()): ?>
                     <a href="profile.php" class="text-gray-700 hover:text-blue-600">My Bookings</a>

@@ -12,6 +12,7 @@ import com.example.carrental.ui.screens.CarListScreen
 import com.example.carrental.ui.screens.LoginScreen
 import com.example.carrental.ui.screens.PaymentScreen
 import com.example.carrental.ui.screens.AdminPaymentScreen
+import com.example.carrental.ui.screens.MapScreen
 import com.example.carrental.ui.theme.CarRentalTheme
 import com.example.carrental.viewmodel.CarViewModel
 import com.example.carrental.viewmodel.PaymentViewModel
@@ -48,10 +49,14 @@ class MainActivity : ComponentActivity() {
                             CarListScreen(
                                 viewModel = viewModel,
                                 onAdminClick = { navController.navigate("admin_payments") },
+                                onMapClick = { navController.navigate("map") },
                                 onBookClick = { bookingId, amount -> 
                                     navController.navigate("payment/$bookingId/$amount")
                                 }
                             )
+                        }
+                        composable("map") {
+                            MapScreen(onBackClick = { navController.popBackStack() })
                         }
                         composable(
                             "payment/{bookingId}/{amount}",
