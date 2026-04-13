@@ -9,14 +9,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import com.example.carrental.ui.screens.CarListScreen
+import com.example.carrental.ui.screens.LoginScreen
+import com.example.carrental.ui.screens.PaymentScreen
+import com.example.carrental.ui.screens.AdminPaymentScreen
 import com.example.carrental.ui.theme.CarRentalTheme
 import com.example.carrental.viewmodel.CarViewModel
+import com.example.carrental.viewmodel.PaymentViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.carrental.ui.screens.LoginScreen
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,7 +45,31 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("car_list") {
                             val viewModel: CarViewModel = viewModel()
-                            CarListScreen(viewModel = viewModel)
+                            CarListScreen(
+                                viewModel = viewModel,
+                                onAdminClick = { navController.navigate("admin_payments") },
+                                onBookClick = { bookingId, amount -> 
+                                    navController.navigate("payment/$bookingId/$amount")
+                                }
+                            )
+                        }
+                        composable(
+                            "payment/{bookingId}/{amount}",
+                            arguments = listOf(
+                                navArgument("bookingId") { type = NavType.IntType },
+                                navArgument("amount") { type = NavType.FloatType }
+                            )
+                        ) { backStackEntry ->
+                            val bookingId = backStackEntry.arguments?.getInt("bookingId") ?: 0
+                            val amount = backStackEntry.arguments?.getFloat("amount")?.toDouble() ?: 0.0
+                            val viewModel: PaymentViewModel = viewModel()
+                            PaymentScreen(bookingId, amount, viewModel) {
+                                navController.popBackStack()
+                            }
+                        }
+                        composable("admin_payments") {
+                            val viewModel: PaymentViewModel = viewModel()
+                            AdminPaymentScreen(viewModel)
                         }
                     }
                 }
