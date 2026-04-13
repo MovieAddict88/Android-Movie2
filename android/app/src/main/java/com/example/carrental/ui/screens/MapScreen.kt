@@ -1,73 +1,43 @@
 package com.example.carrental.ui.screens
 
-import android.webkit.WebView
-import android.webkit.WebViewClient
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import org.osmdroid.config.Configuration
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
+import coil.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen(onBackClick: () -> Unit) {
-    val htmlContent = """
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Leaflet Map</title>
-            <meta charset="utf-8" />
-            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-            <style>
-                body { padding: 0; margin: 0; }
-                html, body, #map { height: 100%; width: 100vw; }
-            </style>
-        </head>
-        <body>
-            <div id="map"></div>
-            <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-            <script>
-                var map = L.map('map').setView([14.5995, 120.9842], 13);
+    val context = LocalContext.current
+    val mapView = remember { MapView(context) }
+    var selectedCar by remember { mutableStateOf<CarLocation?>(null) }
 
-                var osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19,
-                    attribution: '© OpenStreetMap'
-                });
+    // Configuration for osmdroid
+    LaunchedEffect(Unit) {
+        Configuration.getInstance().userAgentValue = context.packageName
+    }
 
-                var satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                    attribution: 'Esri'
-                });
-
-                osm.addTo(map);
-
-                var baseMaps = {
-                    "Map": osm,
-                    "Satellite": satellite
-                };
-                L.control.layers(baseMaps).addTo(map);
-
-                // Add some dummy car locations
-                var cars = [
-                    { name: "Luxury Sedan", lat: 14.6010, lng: 120.9850 },
-                    { name: "Family SUV", lat: 14.5950, lng: 120.9800 },
-                    { name: "Sport Coupe", lat: 14.6050, lng: 120.9900 },
-                    { name: "Economy Hatchback", lat: 14.6100, lng: 120.9750 }
-                ];
-
-                cars.forEach(function(car) {
-                    L.marker([car.lat, car.lng])
-                        .addTo(map)
-                        .bindPopup('<b>' + car.name + '</b><br>Available for rent');
-                });
-            </script>
-        </body>
-        </html>
-    """.trimIndent()
+    val cars = listOf(
+        CarLocation("Luxury Sedan", 14.6010, 120.9850, "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60", 50.0),
+        CarLocation("Family SUV", 14.5950, 120.9800, "https://images.unsplash.com/photo-1517672651691-24622a91b550?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60", 70.0),
+        CarLocation("Sport Coupe", 14.6050, 120.9900, "https://images.unsplash.com/photo-1503376780353-7e6692767b70?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60", 90.0),
+        CarLocation("Economy Hatchback", 14.6100, 120.9750, "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=60", 35.0)
+    )
 
     Scaffold(
         topBar = {
@@ -84,15 +54,67 @@ fun MapScreen(onBackClick: () -> Unit) {
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
-                factory = { context ->
-                    WebView(context).apply {
-                        webViewClient = WebViewClient()
-                        settings.javaScriptEnabled = true
-                        settings.domStorageEnabled = true
-                        loadDataWithBaseURL("https://appassets.androidplatform.net", htmlContent, "text/html", "UTF-8", null)
+                factory = {
+                    mapView.apply {
+                        setTileSource(TileSourceFactory.MAPNIK)
+                        setMultiTouchControls(true)
+                        controller.setZoom(15.0)
+                        controller.setCenter(GeoPoint(14.5995, 120.9842))
+
+                        cars.forEach { car ->
+                            val marker = Marker(this)
+                            marker.position = GeoPoint(car.lat, car.lng)
+                            marker.title = car.name
+                            marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                            marker.setOnMarkerClickListener { _, _ ->
+                                selectedCar = car
+                                true
+                            }
+                            overlays.add(marker)
+                        }
                     }
                 }
             )
+
+            // Floating Interactive Tile (Card)
+            selectedCar?.let { car ->
+                Card(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        AsyncImage(
+                            model = car.imageUrl,
+                            contentDescription = car.name,
+                            modifier = Modifier.size(80.dp),
+                            contentScale = ContentScale.Crop
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(text = car.name, style = MaterialTheme.typography.titleMedium)
+                            Text(text = "$${car.price}/day", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                            Button(
+                                onClick = { /* Handle booking */ },
+                                modifier = Modifier.padding(top = 8.dp),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
+                            ) {
+                                Text("Book Now", style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                        IconButton(onClick = { selectedCar = null }) {
+                            Icon(Icons.Default.Close, contentDescription = "Close")
+                        }
+                    }
+                }
+            }
         }
     }
 }
+
+data class CarLocation(val name: String, val lat: Double, val lng: Double, val imageUrl: String, val price: Double)
