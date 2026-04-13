@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
     name VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
-    role ENUM('admin', 'customer') DEFAULT 'customer',
+    role ENUM('admin', 'customer', 'driver') DEFAULT 'customer',
     phone VARCHAR(20),
     address TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS cars (
     daily_rate DECIMAL(10, 2) NOT NULL,
     seating_capacity INT,
     image VARCHAR(255),
+    has_dash_cam BOOLEAN DEFAULT FALSE,
     availability_status BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -33,11 +34,28 @@ CREATE TABLE IF NOT EXISTS bookings (
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     total_price DECIMAL(10, 2) NOT NULL,
+    with_driver BOOLEAN DEFAULT FALSE,
+    driver_id INT NULL,
+    carwash_amount DECIMAL(10, 2) DEFAULT 0.00,
+    downpayment_amount DECIMAL(10, 2) DEFAULT 0.00,
     status ENUM('pending', 'confirmed', 'cancelled', 'completed') DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (car_id) REFERENCES cars(id) ON DELETE CASCADE
+    FOREIGN KEY (car_id) REFERENCES cars(id) ON DELETE CASCADE,
+    FOREIGN KEY (driver_id) REFERENCES users(id) ON DELETE SET NULL
 );
+
+CREATE TABLE IF NOT EXISTS settings (
+    `key` VARCHAR(50) PRIMARY KEY,
+    `value` TEXT
+);
+
+INSERT INTO settings (`key`, `value`) VALUES 
+('app_name', 'Car Rental'),
+('app_logo', 'assets/img/logo.png'),
+('carwash_amount', '0.00'),
+('downpayment_type', 'percentage'),
+('downpayment_value', '20');
 
 CREATE TABLE IF NOT EXISTS payments (
     id INT AUTO_INCREMENT PRIMARY KEY,

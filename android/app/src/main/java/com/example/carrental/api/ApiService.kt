@@ -13,6 +13,9 @@ interface ApiService {
     @GET("api/get_cars.php")
     suspend fun getCars(): Response<CarListResponse>
 
+    @GET("api/get_settings.php")
+    suspend fun getSettings(): Response<SettingsResponse>
+
     @POST("api/create_booking.php")
     suspend fun createBooking(@Body request: BookingRequest): Response<BaseResponse>
 

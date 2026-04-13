@@ -30,6 +30,7 @@ $recent_bookings = $pdo->query("SELECT b.*, u.name as user_name, c.brand, c.mode
             <a href="manage_bookings.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-calendar-check mr-2"></i> Bookings</a>
             <a href="manage_payments.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-money-bill-wave mr-2"></i> Payments</a>
             <a href="manage_users.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-users mr-2"></i> Customers</a>
+            <a href="manage_settings.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-cog mr-2"></i> Settings</a>
             <a href="tracking.php" class="block py-2.5 px-4 rounded hover:bg-blue-700 transition"><i class="fas fa-map-marker-alt mr-2"></i> Live Tracking</a>
             <a href="../logout.php" class="block py-2.5 px-4 rounded hover:bg-red-600 transition mt-8"><i class="fas fa-sign-out-alt mr-2"></i> Logout</a>
         </nav>

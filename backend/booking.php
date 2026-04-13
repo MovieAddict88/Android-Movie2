@@ -21,6 +21,8 @@ $success = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $start_date = $_POST['start_date'];
     $end_date = $_POST['end_date'];
+    $with_driver = isset($_POST['with_driver']) ? 1 : 0;
+    $include_carwash = isset($_POST['include_carwash']) ? 1 : 0;
     
     $d1 = new DateTime($start_date);
     $d2 = new DateTime($end_date);
@@ -30,12 +32,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($days <= 0) {
         $error = "End date must be after start date.";
     } else {
-        $total_price = $days * $car['daily_rate'];
+        $base_price = $days * $car['daily_rate'];
+        $carwash_amount = 0;
+        if ($include_carwash) {
+            $carwash_amount = (float)getSetting('carwash_amount', '0.00');
+        }
+        $total_price = $base_price + $carwash_amount;
+
+        // Downpayment calculation
+        $dp_type = getSetting('downpayment_type', 'percentage');
+        $dp_val = (float)getSetting('downpayment_value', '0');
+        if ($dp_type === 'percentage') {
+            $downpayment_amount = ($total_price * $dp_val) / 100;
+        } else {
+            $downpayment_amount = $dp_val;
+        }
+
         $user_id = $_SESSION['user_id'];
 
-        $stmt = $pdo->prepare("INSERT INTO bookings (user_id, car_id, start_date, end_date, total_price) VALUES (?, ?, ?, ?, ?)");
-        if ($stmt->execute([$user_id, $car_id, $start_date, $end_date, $total_price])) {
-            $success = "Booking requested successfully! Check your profile for status.";
+        $stmt = $pdo->prepare("INSERT INTO bookings (user_id, car_id, start_date, end_date, total_price, with_driver, carwash_amount, downpayment_amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        if ($stmt->execute([$user_id, $car_id, $start_date, $end_date, $total_price, $with_driver, $carwash_amount, $downpayment_amount])) {
+            $success = "Booking requested successfully! Your total is $" . number_format($total_price, 2) . " and required downpayment is $" . number_format($downpayment_amount, 2) . ". Check your profile for status.";
         } else {
             $error = "Failed to create booking.";
         }
@@ -76,6 +93,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div>
                         <label class="block text-gray-700 mb-1">Return Date</label>
                         <input type="date" name="end_date" class="w-full border rounded-lg p-2 focus:ring-2 focus:ring-blue-600" required min="<?= date('Y-m-d', strtotime('+1 day')) ?>">
+                    </div>
+                    <div class="flex flex-col space-y-2">
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" name="with_driver" value="1" class="rounded text-blue-600">
+                            <span>Request a Driver</span>
+                        </label>
+                        <label class="flex items-center space-x-2">
+                            <input type="checkbox" name="include_carwash" value="1" class="rounded text-blue-600">
+                            <span>Include Carwash (+$<?= getSetting('carwash_amount', '0.00') ?>)</span>
+                        </label>
                     </div>
                     <div class="pt-4">
                         <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition">Confirm Booking</button>
