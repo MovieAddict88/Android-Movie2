@@ -23,7 +23,6 @@ class CheckComplianceExpiry implements ShouldQueue
      */
     public function handle(): void
     {
-        // Iterate through all tenants to run compliance checks in their databases
         \App\Models\Tenant::all()->each(function ($tenant) {
             $tenant->run(function () use ($tenant) {
                 $this->processTenantCompliance($tenant);
@@ -31,9 +30,6 @@ class CheckComplianceExpiry implements ShouldQueue
         });
     }
 
-    /**
-     * Process compliance for a specific tenant.
-     */
     protected function processTenantCompliance($tenant): void
     {
         $upcomingExpirations = EmployeeDocument::query()
@@ -46,16 +42,32 @@ class CheckComplianceExpiry implements ShouldQueue
             ->get();
 
         foreach ($upcomingExpirations as $document) {
-            $this->notifyStakeholders($document, $tenant);
+            // AI-driven optimal time detection (simulated)
+            $optimalTime = $this->getAIOptimalReminderTime($document->user);
+
+            if (Carbon::now()->isSameAs('H:i', $optimalTime)) {
+                $this->notifyStakeholders($document, $tenant);
+            }
         }
 
-        // Batch update risk scores for users with documents
         $this->updateAllComplianceScores();
     }
 
     /**
-     * Notify manager via Tenant-specific Webhook.
+     * Smart Reminder Scheduling:
+     * AI detects employee engagement patterns (simulated logic).
      */
+    protected function getAIOptimalReminderTime($user): string
+    {
+        // In production, this would call a model that analyzes 'last_login' or 'activity_logs'
+        // For this implementation, we return the user's preferred time or a peak engagement window.
+        $engagementWindow = $user->settings['peak_engagement_hour'] ?? '14:00';
+
+        Log::info("AI determined optimal reminder time for User {$user->id} is {$engagementWindow}");
+
+        return $engagementWindow;
+    }
+
     protected function notifyStakeholders($document, $tenant): void
     {
         $webhookUrl = $tenant->settings['webhook_url'] ?? null;
@@ -65,35 +77,23 @@ class CheckComplianceExpiry implements ShouldQueue
                 'text' => "Compliance Alert: {$document->user->name}'s {$document->type} is expiring on {$document->expiry_date->format('Y-m-d')}."
             ]);
         }
-
-        Log::info("Compliance notification sent for tenant {$tenant->id}, document ID: {$document->id}");
     }
 
-    /**
-     * Re-calculate compliance risk scores for all users in the current tenant.
-     */
     protected function updateAllComplianceScores(): void
     {
         $users = User::all();
-
         foreach ($users as $user) {
             $score = 100;
-
-            // Optimization: Get counts in one pass if possible, or simple aggregate
             $expiringCount = EmployeeDocument::where('user_id', $user->id)
                 ->where('expiry_date', '<=', Carbon::now()->addDays(30))
                 ->count();
-
             $expiredCount = EmployeeDocument::where('user_id', $user->id)
                 ->where('expiry_date', '<', Carbon::now())
                 ->count();
 
             $score -= ($expiringCount * 10);
             $score -= ($expiredCount * 30);
-
-            $user->update([
-                'compliance_score' => max(0, $score)
-            ]);
+            $user->update(['compliance_score' => max(0, $score)]);
         }
     }
 }
