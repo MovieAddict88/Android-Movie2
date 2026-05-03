@@ -12,7 +12,7 @@ import com.fieldservice.agent.data.entity.LocationEntity
         LocationEntity::class,
         JobLogEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 abstract class FieldServiceDatabase : RoomDatabase() {
@@ -21,16 +21,5 @@ abstract class FieldServiceDatabase : RoomDatabase() {
 
     companion object {
         const val DATABASE_NAME = "field_service_db"
-
-        val MIGRATIONS = listOf(
-            // Add migration callbacks here when schema changes
-            // Example:
-            // Migration from 1 to 2:
-            // object : Migration(1, 2) {
-            //     override fun migrate(it: SupportSQLiteDatabase) {
-            //         it.execSQL("ALTER TABLE locations ADD COLUMN new_column TEXT")
-            //     }
-            // }
-        )
     }
 }

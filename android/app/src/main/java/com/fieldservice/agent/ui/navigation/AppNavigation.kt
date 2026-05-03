@@ -1,40 +1,36 @@
 package com.fieldservice.agent.ui.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.fieldservice.agent.ui.screens.camera.CameraScreen
 import com.fieldservice.agent.ui.screens.home.HomeScreen
 import com.fieldservice.agent.ui.screens.jobdetails.JobDetailsScreen
 import com.fieldservice.agent.ui.screens.login.LoginScreen
-import com.fieldservice.agent.ui.screens.login.LoginViewModel
+import com.fieldservice.agent.ui.screens.notifications.NotificationsScreen
+import com.fieldservice.agent.ui.screens.settings.SettingsScreen
 
 sealed class Screen(val route: String) {
     data object Login : Screen("login")
     data object Home : Screen("home")
-    data object JobDetails : Screen("job/{locationId}") {
-        fun createRoute(locationId: Int) = "job/$locationId"
+    data object JobDetails : Screen("job_details/{locationId}") {
+        fun createRoute(locationId: Int) = "job_details/$locationId"
     }
     data object Camera : Screen("camera/{locationId}") {
         fun createRoute(locationId: Int) = "camera/$locationId"
     }
     data object Settings : Screen("settings")
+    data object Notifications : Screen("notifications")
 }
 
 @Composable
 fun AppNavigation(
-    navController: NavHostController = rememberNavController(),
-    loginViewModel: LoginViewModel = hiltViewModel()
+    navController: NavHostController,
+    startDestination: String
 ) {
-    val isLoggedIn by loginViewModel.isLoggedIn.collectAsState()
-    val startDestination = if (isLoggedIn) Screen.Home.route else Screen.Login.route
-
     NavHost(
         navController = navController,
         startDestination = startDestination
@@ -56,19 +52,24 @@ fun AppNavigation(
                 },
                 onSettingsClick = {
                     navController.navigate(Screen.Settings.route)
+                },
+                onNotificationClick = {
+                    navController.navigate(Screen.Notifications.route)
                 }
             )
         }
 
         composable(
             route = Screen.JobDetails.route,
-            arguments = listOf(navArgument("locationId") { type = NavType.IntType })
+            arguments = listOf(
+                navArgument("locationId") { type = NavType.IntType }
+            )
         ) { backStackEntry ->
-            val locationId = backStackEntry.arguments?.getInt("locationId") ?: 0
+            val locationId = backStackEntry.arguments?.getInt("locationId") ?: return@composable
             JobDetailsScreen(
                 locationId = locationId,
-                onBack = { navController.popBackStack() },
-                onTakePhoto = {
+                onNavigateBack = { navController.popBackStack() },
+                onOpenCamera = { 
                     navController.navigate(Screen.Camera.createRoute(locationId))
                 }
             )
@@ -76,25 +77,31 @@ fun AppNavigation(
 
         composable(
             route = Screen.Camera.route,
-            arguments = listOf(navArgument("locationId") { type = NavType.IntType })
+            arguments = listOf(
+                navArgument("locationId") { type = NavType.IntType }
+            )
         ) { backStackEntry ->
-            val locationId = backStackEntry.arguments?.getInt("locationId") ?: 0
+            val locationId = backStackEntry.arguments?.getInt("locationId") ?: return@composable
             CameraScreen(
                 locationId = locationId,
-                onBack = { navController.popBackStack() },
-                onPhotoTaken = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
         composable(Screen.Settings.route) {
             SettingsScreen(
-                onBack = { navController.popBackStack() },
+                onNavigateBack = { navController.popBackStack() },
                 onLogout = {
-                    loginViewModel.logout()
                     navController.navigate(Screen.Login.route) {
                         popUpTo(0) { inclusive = true }
                     }
                 }
+            )
+        }
+
+        composable(Screen.Notifications.route) {
+            NotificationsScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }

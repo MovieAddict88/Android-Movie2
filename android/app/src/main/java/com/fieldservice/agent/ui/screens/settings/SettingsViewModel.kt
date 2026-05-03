@@ -27,6 +27,7 @@ class SettingsViewModel @Inject constructor(
 
     init {
         loadPendingSyncs()
+        observeUser()
     }
 
     private fun loadPendingSyncs() {
@@ -36,6 +37,19 @@ class SettingsViewModel @Inject constructor(
                     it.copy(
                         pendingSyncs = count,
                         appVersion = "v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
+                    )
+                }
+            }
+        }
+    }
+
+    private fun observeUser() {
+        viewModelScope.launch {
+            authRepository.currentUser.collect { user ->
+                _uiState.update {
+                    it.copy(
+                        userName = user?.name ?: "Unknown",
+                        userEmail = user?.email ?: ""
                     )
                 }
             }
@@ -59,16 +73,46 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun logout() {
+    fun clearCache() {
         viewModelScope.launch {
-            authRepository.clearAuth()
+            _uiState.update { it.copy(isClearing = true) }
+            
+            // Clear local database cache
+            jobLogRepository.clearAllJobLogs()
+            
+            _uiState.update {
+                it.copy(
+                    isClearing = false,
+                    lastClearTime = SimpleDateFormat("MMM dd, HH:mm", Locale.US).format(Date())
+                )
+            }
+        }
+    }
+
+    fun logout(onComplete: () -> Unit) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoggingOut = true) }
+
+            // Cancel any pending sync work
+            SyncWorker.cancelAllSyncWork(context)
+
+            // Perform logout
+            authRepository.logout()
+
+            _uiState.update { it.copy(isLoggingOut = false) }
+            onComplete()
         }
     }
 }
 
 data class SettingsUiState(
     val isSyncing: Boolean = false,
+    val isClearing: Boolean = false,
+    val isLoggingOut: Boolean = false,
     val lastSyncTime: String? = null,
+    val lastClearTime: String? = null,
     val pendingSyncs: Int = 0,
+    val userName: String = "",
+    val userEmail: String = "",
     val appVersion: String = ""
 )

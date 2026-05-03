@@ -4,35 +4,22 @@ namespace App\Http\Controllers\API;
 
 use App\Enums\JobStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\JobLogUploadRequest;
 use App\Models\JobLog;
 use App\Models\Location;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class SyncController extends Controller
 {
     /**
      * Upload completed job log.
      */
-    public function uploadJobLog(Request $request): JsonResponse
+    public function uploadJobLog(JobLogUploadRequest $request): JsonResponse
     {
-        $request->validate([
-            'location_id' => 'required|integer',
-            'sync_id' => 'required|string|unique:job_logs,sync_id',
-            'status' => 'required|in:completed,failed,cancelled',
-            'started_at' => 'required|date',
-            'completed_at' => 'required|date',
-            'latitude_start' => 'nullable|numeric',
-            'longitude_start' => 'nullable|numeric',
-            'latitude_end' => 'nullable|numeric',
-            'longitude_end' => 'nullable|numeric',
-            'notes' => 'nullable|string',
-            'photo_base64' => 'nullable|string',
-            'metadata' => 'nullable|array',
-        ]);
-
         $user = $request->user();
 
         $location = Location::where('company_id', $user->company_id)
@@ -42,7 +29,7 @@ class SyncController extends Controller
         if (!$location) {
             return response()->json([
                 'success' => false,
-                'message' => 'Location not found',
+                'message' => 'Location not found or not assigned to you',
             ], 404);
         }
 
@@ -51,40 +38,60 @@ class SyncController extends Controller
             $photoPath = $this->savePhoto($request->photo_base64, $user->company_id);
         }
 
-        $jobLog = JobLog::create([
-            'company_id' => $user->company_id,
-            'location_id' => $request->location_id,
-            'worker_id' => $user->id,
-            'status' => JobStatus::from($request->status),
-            'started_at' => $request->started_at,
-            'completed_at' => $request->completed_at,
-            'latitude_start' => $request->latitude_start,
-            'longitude_start' => $request->longitude_start,
-            'latitude_end' => $request->latitude_end,
-            'longitude_end' => $request->longitude_end,
-            'notes' => $request->notes,
-            'photo_path' => $photoPath,
-            'sync_id' => $request->sync_id,
-            'metadata' => $request->metadata,
-        ]);
+        try {
+            $jobLog = JobLog::create([
+                'company_id' => $user->company_id,
+                'location_id' => $request->location_id,
+                'worker_id' => $user->id,
+                'status' => JobStatus::from($request->status),
+                'started_at' => $request->started_at,
+                'completed_at' => $request->completed_at,
+                'latitude_start' => $request->latitude_start,
+                'longitude_start' => $request->longitude_start,
+                'latitude_end' => $request->latitude_end,
+                'longitude_end' => $request->longitude_end,
+                'notes' => $request->notes,
+                'photo_path' => $photoPath,
+                'sync_id' => $request->sync_id,
+                'metadata' => $request->metadata,
+            ]);
 
-        if ($request->status === 'completed') {
-            $location->update(['status' => JobStatus::COMPLETED]);
-        }
+            // Update location status if completed
+            if ($request->status === 'completed') {
+                $location->update(['status' => JobStatus::COMPLETED]);
+            }
 
-        return response()->json([
-            'success' => true,
-            'job_log' => [
-                'id' => $jobLog->id,
-                'sync_id' => $jobLog->sync_id,
-                'status' => $jobLog->status->value,
-                'completed_at' => $jobLog->completed_at?->toIso8601String(),
-            ],
-            'location_verified' => $location->isWithinGeofence(
+            $wasAtLocation = $location->isWithinGeofence(
                 $request->latitude_end ?? 0,
                 $request->longitude_end ?? 0
-            ),
-        ], 201);
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Job log uploaded successfully',
+                'job_log' => [
+                    'id' => $jobLog->id,
+                    'sync_id' => $jobLog->sync_id,
+                    'status' => $jobLog->status->value,
+                    'started_at' => $jobLog->started_at?->toIso8601String(),
+                    'completed_at' => $jobLog->completed_at?->toIso8601String(),
+                    'photo_url' => $jobLog->photo_url,
+                ],
+                'location_verified' => $wasAtLocation,
+                'verification_distance_meters' => $wasAtLocation ? 0 : $this->calculateDistance(
+                    $location->latitude,
+                    $location->longitude,
+                    $request->latitude_end ?? 0,
+                    $request->longitude_end ?? 0
+                ),
+            ], 201);
+        } catch (\Exception $e) {
+            Log::error('Job log upload failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to save job log',
+            ], 500);
+        }
     }
 
     /**
@@ -93,57 +100,77 @@ class SyncController extends Controller
     public function sync(Request $request): JsonResponse
     {
         $request->validate([
-            'last_sync_at' => 'nullable|date',
+            'last_sync_at' => ['nullable', 'date'],
         ]);
 
-        $user = $request->user();
-        $lastSync = $request->last_sync_at ? now()->parse($request->last_sync_at) : null;
+        try {
+            $user = $request->user();
+            $lastSync = $request->last_sync_at ? now()->parse($request->last_sync_at) : null;
+            $syncWindow = $lastSync ?? now()->subDays(30);
 
-        $locations = Location::where('company_id', $user->company_id)
-            ->where('assigned_to', $user->id)
-            ->where('updated_at', '>', $lastSync ?? now()->subDays(30))
-            ->get()
-            ->map(function ($location) {
-                return [
-                    'id' => $location->id,
-                    'name' => $location->name,
-                    'address' => $location->address,
-                    'latitude' => $location->latitude,
-                    'longitude' => $location->longitude,
-                    'radius' => $location->radius,
-                    'status' => $location->status->value,
-                    'notes' => $location->notes,
-                    'scheduled_date' => $location->scheduled_date?->toDateString(),
-                    'scheduled_time_start' => $location->scheduled_time_start,
-                    'scheduled_time_end' => $location->scheduled_time_end,
-                    'updated_at' => $location->updated_at->toIso8601String(),
-                ];
-            });
+            // Get locations
+            $locations = Location::with('company')
+                ->where('company_id', $user->company_id)
+                ->where('assigned_to', $user->id)
+                ->where('updated_at', '>', $syncWindow)
+                ->get()
+                ->map(function ($location) {
+                    return [
+                        'id' => $location->id,
+                        'name' => $location->name,
+                        'address' => $location->address,
+                        'latitude' => (float) $location->latitude,
+                        'longitude' => (float) $location->longitude,
+                        'radius' => $location->radius,
+                        'status' => $location->status->value,
+                        'status_label' => $location->status->label(),
+                        'notes' => $location->notes,
+                        'scheduled_date' => $location->scheduled_date?->toDateString(),
+                        'scheduled_time_start' => $location->scheduled_time_start,
+                        'scheduled_time_end' => $location->scheduled_time_end,
+                        'google_maps_url' => $location->google_maps_url,
+                        'created_at' => $location->created_at->toIso8601String(),
+                        'updated_at' => $location->updated_at->toIso8601String(),
+                    ];
+                });
 
-        $jobLogs = JobLog::where('company_id', $user->company_id)
-            ->where('worker_id', $user->id)
-            ->where('updated_at', '>', $lastSync ?? now()->subDays(30))
-            ->get()
-            ->map(function ($jobLog) {
-                return [
-                    'id' => $jobLog->id,
-                    'location_id' => $jobLog->location_id,
-                    'sync_id' => $jobLog->sync_id,
-                    'status' => $jobLog->status->value,
-                    'started_at' => $jobLog->started_at?->toIso8601String(),
-                    'completed_at' => $jobLog->completed_at?->toIso8601String(),
-                    'notes' => $jobLog->notes,
-                    'photo_url' => $jobLog->photo_url,
-                    'updated_at' => $jobLog->updated_at->toIso8601String(),
-                ];
-            });
+            // Get job logs
+            $jobLogs = JobLog::where('company_id', $user->company_id)
+                ->where('worker_id', $user->id)
+                ->where('updated_at', '>', $syncWindow)
+                ->get()
+                ->map(function ($jobLog) {
+                    return [
+                        'id' => $jobLog->id,
+                        'location_id' => $jobLog->location_id,
+                        'sync_id' => $jobLog->sync_id,
+                        'status' => $jobLog->status->value,
+                        'status_label' => $jobLog->status->label(),
+                        'started_at' => $jobLog->started_at?->toIso8601String(),
+                        'completed_at' => $jobLog->completed_at?->toIso8601String(),
+                        'notes' => $jobLog->notes,
+                        'photo_url' => $jobLog->photo_url,
+                        'was_at_location' => $jobLog->wasCompletedAtLocation(),
+                        'created_at' => $jobLog->created_at->toIso8601String(),
+                        'updated_at' => $jobLog->updated_at->toIso8601String(),
+                    ];
+                });
 
-        return response()->json([
-            'success' => true,
-            'sync_at' => now()->toIso8601String(),
-            'locations' => $locations,
-            'job_logs' => $jobLogs,
-        ]);
+            return response()->json([
+                'success' => true,
+                'sync_at' => now()->toIso8601String(),
+                'locations_count' => $locations->count(),
+                'job_logs_count' => $jobLogs->count(),
+                'locations' => $locations,
+                'job_logs' => $jobLogs,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Sync failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Sync failed',
+            ], 500);
+        }
     }
 
     /**
@@ -151,27 +178,29 @@ class SyncController extends Controller
      */
     public function jobLogs(Request $request): JsonResponse
     {
-        $user = $request->user();
+        try {
+            $user = $request->user();
 
-        $query = JobLog::where('company_id', $user->company_id)
-            ->where('worker_id', $user->id)
-            ->with(['location:id,name,address']);
+            $query = JobLog::where('company_id', $user->company_id)
+                ->where('worker_id', $user->id)
+                ->with(['location:id,name,address']);
 
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
-        }
+            if ($request->has('status')) {
+                $query->where('status', $request->status);
+            }
 
-        if ($request->has('from_date')) {
-            $query->whereDate('completed_at', '>=', $request->from_date);
-        }
+            if ($request->has('from_date')) {
+                $query->whereDate('completed_at', '>=', $request->from_date);
+            }
 
-        if ($request->has('to_date')) {
-            $query->whereDate('completed_at', '<=', $request->to_date);
-        }
+            if ($request->has('to_date')) {
+                $query->whereDate('completed_at', '<=', $request->to_date);
+            }
 
-        $jobLogs = $query->orderBy('completed_at', 'desc')
-            ->paginate($request->integer('per_page', 20))
-            ->map(function ($jobLog) {
+            $perPage = min($request->integer('per_page', 20), 100);
+            $jobLogsPaginated = $query->orderBy('completed_at', 'desc')->paginate($perPage);
+
+            $jobLogs = $jobLogsPaginated->map(function ($jobLog) {
                 return [
                     'id' => $jobLog->id,
                     'location_id' => $jobLog->location_id,
@@ -190,16 +219,24 @@ class SyncController extends Controller
                 ];
             });
 
-        return response()->json([
-            'success' => true,
-            'job_logs' => $jobLogs->items(),
-            'pagination' => [
-                'current_page' => $jobLogs->currentPage(),
-                'last_page' => $jobLogs->lastPage(),
-                'per_page' => $jobLogs->perPage(),
-                'total' => $jobLog->total(),
-            ],
-        ]);
+            return response()->json([
+                'success' => true,
+                'job_logs' => $jobLogs->items(),
+                'pagination' => [
+                    'current_page' => $jobLogsPaginated->currentPage(),
+                    'last_page' => $jobLogsPaginated->lastPage(),
+                    'per_page' => $jobLogsPaginated->perPage(),
+                    'total' => $jobLogsPaginated->total(),
+                    'has_more' => $jobLogsPaginated->hasMorePages(),
+                ],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to fetch job logs: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch job logs',
+            ], 500);
+        }
     }
 
     /**
@@ -208,19 +245,56 @@ class SyncController extends Controller
     private function savePhoto(string $base64Data, int $companyId): ?string
     {
         try {
+            // Remove data URI prefix if present
+            if (str_contains($base64Data, ',')) {
+                $base64Data = substr($base64Data, strpos($base64Data, ',') + 1);
+            }
+
             $imageData = base64_decode($base64Data);
-            $extension = 'jpg';
+            if ($imageData === false) {
+                return null;
+            }
+
+            // Detect image type from magic bytes
+            $finfo = new \finfo(FILEINFO_MIME_TYPE);
+            $mimeType = $finfo->buffer($imageData);
+            
+            $extension = match ($mimeType) {
+                'image/jpeg' => 'jpg',
+                'image/png' => 'png',
+                'image/gif' => 'gif',
+                'image/webp' => 'webp',
+                default => 'jpg',
+            };
+
             $filename = Str::uuid() . '.' . $extension;
             $path = JobLog::PHOTO_PATH . '/' . $companyId;
 
-            Storage::disk('public')->put(
-                $path . '/' . $filename,
-                $imageData
-            );
+            Storage::disk('public')->put($path . '/' . $filename, $imageData);
 
             return $path . '/' . $filename;
         } catch (\Exception $e) {
+            Log::error('Photo save failed: ' . $e->getMessage());
             return null;
         }
+    }
+
+    /**
+     * Calculate distance between two coordinates.
+     */
+    private function calculateDistance(float $lat1, float $lng1, float $lat2, float $lng2): float
+    {
+        $earthRadius = 6371000; // meters
+
+        $latDelta = deg2rad($lat2 - $lat1);
+        $lngDelta = deg2rad($lng2 - $lng1);
+
+        $a = sin($latDelta / 2) * sin($latDelta / 2) +
+            cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+            sin($lngDelta / 2) * sin($lngDelta / 2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return $earthRadius * $c;
     }
 }
