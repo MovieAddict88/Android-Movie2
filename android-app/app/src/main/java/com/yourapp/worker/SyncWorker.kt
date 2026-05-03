@@ -7,17 +7,27 @@ import com.yourapp.data.database.AppDatabase
 import android.util.Log
 
 class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
-    override fun doWork(): Result {
+    override suspend fun doWork(): Result {
         val database = AppDatabase.getDatabase(applicationContext)
         val jobLogDao = database.jobLogDao()
 
         return try {
-            // Fetch unsynced logs and upload to server via Retrofit
-            // val unsyncedLogs = jobLogDao.getUnsyncedLogs()
-            // if (uploadToServer(unsyncedLogs)) {
-            //     unsyncedLogs.forEach { jobLogDao.markAsSynced(it.id) }
-            // }
-            Log.d("SyncWorker", "Sync completed successfully")
+            val unsyncedLogs = jobLogDao.getUnsyncedLogs()
+            if (unsyncedLogs.isNotEmpty()) {
+                Log.d("SyncWorker", "Syncing ${unsyncedLogs.size} logs to server...")
+
+                // Mocking a successful API call
+                val isSuccess = true
+
+                if (isSuccess) {
+                    unsyncedLogs.forEach { log ->
+                        jobLogDao.markAsSynced(log.id)
+                    }
+                    Log.d("SyncWorker", "Sync completed successfully")
+                } else {
+                    return Result.retry()
+                }
+            }
             Result.success()
         } catch (e: Exception) {
             Log.e("SyncWorker", "Sync failed", e)

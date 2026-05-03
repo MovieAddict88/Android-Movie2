@@ -21,7 +21,17 @@ class JobAssigned extends Notification
 
     public function via($notifiable): array
     {
-        return ['firebase'];
+        return ['firebase', 'mail'];
+    }
+
+    public function toMail($notifiable)
+    {
+        return (new \Illuminate\Notifications\Messages\MailMessage)
+            ->subject('New Job Assigned')
+            ->line("A new job site has been assigned: {$this->location->name}")
+            ->line("Address: {$this->location->address}")
+            ->action('View Job', url('/jobs'))
+            ->line('Thank you for using our application!');
     }
 
     public function toFirebase($notifiable)
