@@ -23,7 +23,7 @@ class SyncController extends Controller
         $request->validate([
             'location_id' => 'required|exists:locations,id',
             'check_in_at' => 'required|date',
-            'check_out_at' => 'required|date',
+            'check_out_at' => 'required|date|after:check_in_at',
             'notes' => 'nullable|string',
             'photo_base64' => 'nullable|string',
         ]);

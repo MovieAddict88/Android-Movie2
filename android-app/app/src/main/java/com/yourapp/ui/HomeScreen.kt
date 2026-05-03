@@ -9,11 +9,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.yourapp.data.entity.JobLocation
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(locations: List<JobLocation>, onCompleteJob: (JobLocation) -> Unit) {
     Scaffold(
         topBar = {
-            SmallTopAppBar(title = { Text("Field Service Jobs") })
+            TopAppBar(title = { Text("Field Service Jobs") })
         }
     ) { padding ->
         LazyColumn(
@@ -40,6 +41,12 @@ fun JobItem(location: JobLocation, onCompleteJob: (JobLocation) -> Unit) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = location.name, style = MaterialTheme.typography.titleLarge)
             Text(text = location.address, style = MaterialTheme.typography.bodyMedium)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Status: Available",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.secondary
+            )
             Spacer(modifier = Modifier.height(8.dp))
             Button(onClick = { onCompleteJob(location) }) {
                 Text("Complete Job")
