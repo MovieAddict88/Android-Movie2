@@ -57,3 +57,25 @@ The platform embeds video metadata in the HTML source using Next.js hydration sc
 - API requests often include custom headers like `encrypt-key`, `Device-Code`, and `Authorization` (Bearer token).
 - Video URLs are protected by `auth_key` parameters, preventing unauthorized access without valid session-derived signatures.
 - Root access to `appsecapi.netshort.com` is restricted (404/403).
+
+## 7. Discovering All Videos and Episodes
+There is no single static JSON file containing every video, but the following methods are used by the platform to list content:
+
+### Web Interface:
+- `https://netshort.com/all-episodes`: A paginated directory of all short dramas.
+- `https://netshort.com/drama/all-plots`: Category-based listing.
+
+### Hydrated JSON Data:
+When visiting `/all-episodes`, the page source contains a JSON array in the `self.__next_f.push` scripts. Key fields include:
+- `videoList`: An array of drama objects.
+- `shortPlayId`: Unique identifier for each series.
+- `shortPlayName`: Title of the drama.
+- `fullEpisodeNameUrl`: Relative path to the episode list.
+
+### Potential List APIs:
+The frontend calls these endpoints to retrieve content lists:
+- `/prod-web-api/web/web/v2/queryPopularLabelList/cascade_label` (POST)
+- `/prod-web-api/web/web/v3/queryOnlineLabelList/cascade_label` (POST)
+- `/prod-web-api/web/marketing/queryMarketingList` (POST)
+
+These APIs typically return JSON objects with a `data` field containing lists of short dramas and their metadata.
