@@ -1,5 +1,6 @@
 package com.fieldservice.agent.ui.screens.login
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -31,8 +32,7 @@ fun LoginScreen(
     viewModel: LoginViewModel = hiltViewModel()
 ) {
     val loginState by viewModel.loginState.collectAsState()
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    val formState by viewModel.formState.collectAsState()
     var passwordVisible by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
 
@@ -49,8 +49,9 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        // App Logo/Title
         Text(
-            text = stringResource(R.string.login_title),
+            text = "Field Service",
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
@@ -59,7 +60,7 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = stringResource(R.string.login_subtitle),
+            text = "Sign in to continue",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -67,30 +68,37 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(48.dp))
 
+        // Email Field
         OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text(stringResource(R.string.email_label)) },
+            value = formState.email,
+            onValueChange = { viewModel.onEmailChange(it) },
+            label = { Text("Email") },
+            placeholder = { Text("worker@company.com") },
             leadingIcon = {
                 Icon(Icons.Default.Email, contentDescription = null)
             },
+            isError = formState.emailError != null,
+            supportingText = formState.emailError?.let { { Text(it) } },
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Email,
-                imeAction = ImeAction.Next
+                imeAction = ImeAction.Next,
+                autoCorrect = false
             ),
             keyboardActions = KeyboardActions(
                 onNext = { focusManager.moveFocus(FocusDirection.Down) }
             ),
             singleLine = true,
+            enabled = !formState.isLoading,
             modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Password Field
         OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text(stringResource(R.string.password_label)) },
+            value = formState.password,
+            onValueChange = { viewModel.onPasswordChange(it) },
+            label = { Text("Password") },
             leadingIcon = {
                 Icon(Icons.Default.Lock, contentDescription = null)
             },
@@ -103,49 +111,109 @@ fun LoginScreen(
                 }
             },
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            isError = formState.passwordError != null,
+            supportingText = formState.passwordError?.let { { Text(it) } },
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Password,
-                imeAction = ImeAction.Done
+                imeAction = ImeAction.Done,
+                autoCorrect = false
             ),
             keyboardActions = KeyboardActions(
                 onDone = {
                     focusManager.clearFocus()
-                    viewModel.login(email, password)
+                    viewModel.login()
                 }
             ),
             singleLine = true,
+            enabled = !formState.isLoading,
             modifier = Modifier.fillMaxWidth()
         )
 
         Spacer(modifier = Modifier.height(32.dp))
 
+        // Login Button
         Button(
-            onClick = { viewModel.login(email, password) },
-            enabled = email.isNotBlank() && password.isNotBlank() && loginState !is LoginState.Loading,
+            onClick = { viewModel.login() },
+            enabled = formState.email.isNotBlank() && 
+                     formState.password.isNotBlank() && 
+                     !formState.isLoading,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp)
         ) {
-            if (loginState is LoginState.Loading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
-            } else {
-                Text(
-                    text = stringResource(R.string.login_button),
-                    style = MaterialTheme.typography.titleMedium
-                )
+            AnimatedContent(
+                targetState = formState.isLoading,
+                label = "login_button"
+            ) { isLoading ->
+                if (isLoading) {
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = "Signing in...",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+                } else {
+                    Text(
+                        text = "Sign In",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
             }
         }
 
-        if (loginState is LoginState.Error) {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = (loginState as LoginState.Error).message,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium
-            )
+        // Error Message
+        AnimatedVisibility(
+            visible = loginState is LoginState.Error,
+            enter = fadeIn() + slideInVertically(),
+            exit = fadeOut() + slideOutVertically()
+        ) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = (loginState as LoginState.Error).message,
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(onClick = { viewModel.clearError() }) {
+                        Icon(
+                            imageVector = Icons.Default.VisibilityOff,
+                            contentDescription = "Dismiss",
+                            tint = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
+                }
+            }
         }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        // Footer
+        Text(
+            text = "Field Service Agent v1.0",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.outline
+        )
     }
 }

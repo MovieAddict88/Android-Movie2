@@ -38,7 +38,12 @@ class HomeViewModel @Inject constructor(
 
             locationRepository.getTodayLocations(todayDate)
                 .catch { e ->
-                    _uiState.update { it.copy(isLoading = false, error = e.message) }
+                    _uiState.update { 
+                        it.copy(
+                            isLoading = false, 
+                            error = e.message ?: "Failed to load locations"
+                        )
+                    }
                 }
                 .collect { locations ->
                     _uiState.update {
@@ -59,9 +64,8 @@ class HomeViewModel @Inject constructor(
 
     private fun observeGeofenceStatus() {
         viewModelScope.launch {
-            geofenceHelper.hasLocationPermission().let { hasPermission ->
-                _uiState.update { it.copy(hasLocationPermission = hasPermission) }
-            }
+            val hasPermission = geofenceHelper.hasLocationPermission()
+            _uiState.update { it.copy(hasLocationPermission = hasPermission) }
         }
     }
 
@@ -76,16 +80,33 @@ class HomeViewModel @Inject constructor(
                 _uiState.update { it.copy(geofenceEnabled = true) }
             },
             onFailure = { e ->
-                _uiState.update { it.copy(geofenceEnabled = false, error = e.message) }
+                _uiState.update { it.copy(geofenceEnabled = false) }
             }
         )
     }
 
     fun refreshLocations() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isRefreshing = true) }
+            _uiState.update { it.copy(isRefreshing = true, error = null) }
+            
             locationRepository.syncLocations()
-            _uiState.update { it.copy(isRefreshing = false) }
+                .onSuccess { locations ->
+                    _uiState.update { 
+                        it.copy(
+                            isRefreshing = false,
+                            locations = locations,
+                            error = null
+                        )
+                    }
+                }
+                .onFailure { e ->
+                    _uiState.update { 
+                        it.copy(
+                            isRefreshing = false,
+                            error = e.message ?: "Failed to refresh"
+                        )
+                    }
+                }
         }
     }
 
@@ -111,6 +132,10 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             locationRepository.updateLocationStatus(locationId, "pending")
         }
+    }
+
+    fun clearError() {
+        _uiState.update { it.copy(error = null) }
     }
 
     override fun onCleared() {

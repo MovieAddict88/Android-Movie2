@@ -1,50 +1,92 @@
 # Laravel
-/app/.phpunit.cache
-/node_modules
-/public/build
-/public/hot
-/public/storage
-/storage/*.key
-/storage/pail
+/vendor/
+/node_modules/
+npm-debug.log
+yarn-error.log
 .env
 .env.backup
 .env.production
-.phpactor.json
 .phpunit.result.cache
 Homestead.json
 Homestead.yaml
 auth.json
-npm-debug.log
-yarn-error.log
-/.fleet
-/.idea
-/.vscode
-*.log
-*.cache
-.phpunit.result.cache
+npm-debug.log*
+yarn-debug.log*
+yarn-integrity
+storage/*.key
+storage/pail/*
+.phpactor*
+.phpunit*
+.php-cs-fixer*
 .php-cs-fixer.cache
+.phpinsurer*
+.phpstorm.meta.php
+.phpunit.xml
+.phpunit.xml.backup
+.prettier*
+.prettierrc*
+.webpack*
+webpack.mix.js
+mix-manifest.json
+*.log
 
-# Android
-*.iml
-.gradle
-/local.properties
-/.idea
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
 .DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+
+# Composer
+composer.lock
+
+# Misc
+*.bak
+*.tmp
+*.cache
+Thumbs.db
+
+# Mobile App (Android)
+android/.gradle/
+android/captures/
+android/local.properties
+android/.gradle/
+android/build/
+android/app/build/
+android/app/*.apk
+android/app/*.aab
+android/app/src/main/res/native/
+android/app/src/debug/
+android/app/src/release/
+android/.idea/
+android/local.properties
+android/*.iml
+android/captures/
+android/.cxx/
+android/.gradle/
+
+# Common
 *.apk
 *.aab
-*.ap_
-*.dex
-*.jar
-*.so
 *.keystore
-!gradle/wrapper/gradle-wrapper.jar
-captures/
-*.hprof
-*.xcuserstate
-app/release/
-app/debug/
-google-services.json
+*.jks
+*.p12
+*.mobileprovision
+
+# Environment files
+*.env.local
+*.env.development.local
+*.env.test.local
+*.env.production.local
+
+# Test/Coverage
+coverage/
+*.lcov
+
+# Git
+*.orig
+
+# System
+.DS_Store
+Thumbs.db

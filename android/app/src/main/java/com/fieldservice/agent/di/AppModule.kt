@@ -9,6 +9,9 @@ import com.fieldservice.agent.data.database.FieldServiceDatabase
 import com.fieldservice.agent.data.remote.api.ApiService
 import com.fieldservice.agent.data.repository.AuthRepository
 import com.fieldservice.agent.service.GeofenceHelper
+import com.fieldservice.agent.util.NetworkConnectivityObserver
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -32,7 +35,9 @@ object AppModule {
             context,
             FieldServiceDatabase::class.java,
             FieldServiceDatabase.DATABASE_NAME
-        ).build()
+        )
+            .fallbackToDestructiveMigration()
+            .build()
     }
 
     @Provides
@@ -45,6 +50,15 @@ object AppModule {
     @Singleton
     fun provideJobLogDao(database: FieldServiceDatabase): JobLogDao {
         return database.jobLogDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideGson(): Gson {
+        return GsonBuilder()
+            .setDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
+            .setLenient()
+            .create()
     }
 
     @Provides
@@ -75,19 +89,33 @@ object AppModule {
                     .build()
                 chain.proceed(request)
             }
+            .addInterceptor { chain ->
+                val request = chain.request()
+                val response = chain.proceed(request)
+                
+                // Handle rate limiting (429)
+                if (response.code == 429) {
+                    val retryAfter = response.header("Retry-After")?.toIntOrNull() ?: 60
+                    Thread.sleep(retryAfter * 1000L)
+                    return@addInterceptor chain.proceed(request)
+                }
+                
+                response
+            }
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
+            .retryOnConnectionFailure(true)
             .build()
     }
 
     @Provides
     @Singleton
-    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
+    fun provideRetrofit(okHttpClient: OkHttpClient, gson: Gson): Retrofit {
         return Retrofit.Builder()
             .baseUrl(BuildConfig.API_BASE_URL)
             .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
     }
 
@@ -101,5 +129,11 @@ object AppModule {
     @Singleton
     fun provideGeofenceHelper(@ApplicationContext context: Context): GeofenceHelper {
         return GeofenceHelper(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideNetworkConnectivityObserver(@ApplicationContext context: Context): NetworkConnectivityObserver {
+        return NetworkConnectivityObserver(context)
     }
 }
