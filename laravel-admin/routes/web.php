@@ -15,5 +15,5 @@ Route::middleware([
         return view('dashboard');
     })->name('dashboard');
 
-    // Livewire routes would go here
+    Route::get('/job-logs', \App\Livewire\JobLogDashboard::class)->name('job-logs');
 });
