@@ -8,6 +8,7 @@ use App\Models\JobLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class SyncController extends Controller
 {
@@ -20,22 +21,30 @@ class SyncController extends Controller
 
     public function uploadJobLog(Request $request)
     {
+        $user = $request->user();
+
         $request->validate([
-            'location_id' => 'required|exists:locations,id',
+            'location_id' => [
+                'required',
+                Rule::exists('locations', 'id')->where(function ($query) use ($user) {
+                    $query->where('company_id', $user->company_id);
+                }),
+            ],
             'check_in_at' => 'required|date',
             'check_out_at' => 'required|date|after:check_in_at',
-            'notes' => 'nullable|string',
+            'notes' => 'nullable|string|max:1000',
             'photo_base64' => 'nullable|string',
         ]);
 
-        $user = $request->user();
         $photoPath = null;
-
         if ($request->photo_base64) {
+            // Basic validation for base64 image could be added here
             $photoData = base64_decode($request->photo_base64);
-            $fileName = 'job_photos/' . Str::random(40) . '.jpg';
-            Storage::disk('public')->put($fileName, $photoData);
-            $photoPath = $fileName;
+            if ($photoData) {
+                $fileName = 'job_photos/' . Str::random(40) . '.jpg';
+                Storage::disk('public')->put($fileName, $photoData);
+                $photoPath = $fileName;
+            }
         }
 
         $jobLog = JobLog::create([

@@ -1,6 +1,7 @@
 package com.yourapp
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,7 +27,7 @@ class MainActivity : FragmentActivity() {
 
     private val viewModel: MainViewModel by viewModels {
         val database = AppDatabase.getDatabase(applicationContext)
-        MainViewModelFactory(LocationRepository(database.locationDao(), database.jobLogDao()))
+        MainViewModelFactory(application, LocationRepository(database.locationDao(), database.jobLogDao()))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,9 +43,8 @@ class MainActivity : FragmentActivity() {
                 ) {
                     val locations by viewModel.locations.collectAsState()
                     HomeScreen(locations = locations) { location ->
+                        viewModel.setPendingLocation(location)
                         biometricPrompt.authenticate(promptInfo)
-                        // In a real app, you'd handle the success in the callback
-                        // and then call viewModel.completeJob(location, "Completed via UI")
                     }
                 }
             }
@@ -57,7 +57,21 @@ class MainActivity : FragmentActivity() {
             object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     super.onAuthenticationSucceeded(result)
-                    // Success logic
+                    viewModel.pendingLocation.value?.let {
+                        viewModel.completeJob(it, "Completed via Biometric Auth")
+                        Toast.makeText(applicationContext, "Job completed and report generated!", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                    super.onAuthenticationError(errorCode, errString)
+                    Toast.makeText(applicationContext, "Authentication error: $errString", Toast.LENGTH_SHORT).show()
+                    viewModel.setPendingLocation(null)
+                }
+
+                override fun onAuthenticationFailed() {
+                    super.onAuthenticationFailed()
+                    Toast.makeText(applicationContext, "Authentication failed", Toast.LENGTH_SHORT).show()
                 }
             })
 
