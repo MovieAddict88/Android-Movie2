@@ -79,3 +79,21 @@ The frontend calls these endpoints to retrieve content lists:
 - `/prod-web-api/web/marketing/queryMarketingList` (POST)
 
 These APIs typically return JSON objects with a `data` field containing lists of short dramas and their metadata.
+
+## 8. Crawling Strategy
+To automate the discovery and extraction of all video sources, the following crawling strategy is recommended:
+
+### Phase 1: Series Discovery
+1. **Initial Seed**: Start with `https://netshort.com/all-episodes`.
+2. **Pagination Handling**: Iterate through the page numbers (1 to 367+). The URL pattern is likely `?page={n}` or handled via client-side state.
+3. **Data Extraction**: For each page, parse the `self.__next_f.push` scripts in the HTML source. Specifically, look for the `videoList` array which contains the `shortPlayId` and `shortPlayNameUrl` for every drama in that batch.
+
+### Phase 2: Episode Discovery
+1. **Detail Page Visit**: For each `shortPlayNameUrl` discovered, visit the corresponding drama page (e.g., `https://netshort.com/episode/{slug}-{id}`).
+2. **Hydration Parsing**: Extract the `VideoObject` from the page's hydration scripts. This provides the `embedUrl` for the first episode.
+3. **Sequence Mapping**: Identify the total number of episodes. The page contains a list of episode numbers. Follow the link pattern (e.g., `{base-url}-ep-{n}`) to visit and extract the `embedUrl` for subsequent episodes.
+
+### Phase 3: Automation Tools
+- **Static Scraper (Requests + BeautifulSoup)**: Fast and efficient for extracting hydration data from the initial HTML.
+- **Dynamic Scraper (Playwright/Selenium)**: Only necessary if specific interactions (like clicking "Load More") are required, though Next.js hydration data usually contains most information upfront.
+- **JSON Extractors**: Use regex or customized JSON parsers to handle the `self.__next_f.push` format, which is a serialized representation of React components and props.
