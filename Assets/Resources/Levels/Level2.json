@@ -1,0 +1,7 @@
+{
+    "centerLetters": "DOG",
+    "words": [
+        { "word": "DOG", "startX": 0, "startY": 0, "isVertical": false },
+        { "word": "GOD", "startX": 2, "startY": 0, "isVertical": true }
+    ]
+}
